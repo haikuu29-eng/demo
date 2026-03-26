@@ -771,6 +771,7 @@ a { color: inherit; text-decoration: none; }
   <button class="back-btn hidden" id="backBtn" onclick="goBack()" aria-label="Terug">&#8592;</button>
   <h1 id="headerTitle">VTH Bouwtoezicht</h1>
   <div class="header-actions">
+    <button class="icon-btn" onclick="exportData()" aria-label="Backup maken" title="Backup opslaan als bestand" id="backupBtn">&#128190;</button>
     <button class="icon-btn" onclick="showScreen('settings')" aria-label="Instellingen" title="Instellingen">&#9881;</button>
   </div>
 </header>
@@ -1056,12 +1057,17 @@ a { color: inherit; text-decoration: none; }
 
     <div class="settings-card">
       <h3>Data Beheer</h3>
-      <button class="btn btn-secondary btn-block" onclick="exportData()" style="margin-bottom:12px;">&#128229; Data Exporteren (JSON)</button>
-      <div class="form-group">
-        <label>Data Importeren (JSON)</label>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">De backup bevat alle projecten, controles, foto's en instellingen.</p>
+      <button class="btn btn-primary btn-block" onclick="exportData()" style="margin-bottom:12px;">&#128190; Backup opslaan als bestand</button>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label>Backup terugzetten</label>
         <input type="file" id="importFile" accept=".json" style="padding: 10px;">
       </div>
-      <button class="btn btn-secondary btn-block" onclick="importData()">&#128228; Data Importeren</button>
+      <button class="btn btn-secondary btn-block" onclick="importData()" style="margin-bottom:16px;">&#128228; Backup terugzetten</button>
+      <div id="autobackupInfo" style="font-size:12px; color:var(--text-secondary); padding:10px; background:var(--surface); border-radius:var(--radius-sm); border:1px solid var(--border);">
+        Auto-backup: laden...
+      </div>
+      <button class="btn btn-secondary btn-block" onclick="herstelAutoBackup()" style="margin-top:8px; font-size:13px;">&#8635; Herstel laatste auto-backup</button>
     </div>
 
     <div class="settings-card">
@@ -2495,6 +2501,7 @@ function getProjects() {
 }
 function saveProjects(projects) {
   storage.setItem('vth_projects', JSON.stringify(projects));
+  slaAutoBackupOp();
 }
 function getSettings() {
   try { return JSON.parse(storage.getItem('vth_settings') || '{}'); }
@@ -2551,6 +2558,7 @@ function showScreen(screenId) {
       break;
     case 'settings':
       headerTitle.textContent = 'Instellingen';
+      updateAutoBackupInfo();
       break;
     case 'printReport':
       headerTitle.textContent = 'Rapport';
@@ -3738,46 +3746,94 @@ function saveSettings() {
 }
 
 function exportData() {
+  const fotos = JSON.parse(storage.getItem('vth_fotos') || '[]');
+  const logo = storage.getItem('vth_logo') || '';
   const data = {
     projects: getProjects(),
     settings: getSettings(),
+    fotos: fotos,
+    logo: logo,
     exportDate: new Date().toISOString(),
-    version: '1.0'
+    version: '1.1'
   };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'vth-bouwtoezicht-export-' + new Date().toISOString().split('T')[0] + '.json';
+  a.download = 'vth-backup-' + new Date().toISOString().split('T')[0] + '.json';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('Data geëxporteerd');
+  showToast('Backup opgeslagen (' + fotos.length + ' foto\'s inbegrepen)');
 }
 
 function importData() {
   const fileInput = document.getElementById('importFile');
-  if (!fileInput.files.length) { showToast('Selecteer een JSON-bestand'); return; }
-  
+  if (!fileInput.files.length) { showToast('Selecteer een backup-bestand'); return; }
+
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
       if (data.projects) {
         if (!confirm('Dit vervangt alle huidige data. Weet u het zeker?')) return;
-        saveProjects(data.projects);
+        storage.setItem('vth_projects', JSON.stringify(data.projects));
         if (data.settings) saveSettingsData(data.settings);
+        if (data.fotos) storage.setItem('vth_fotos', JSON.stringify(data.fotos));
+        if (data.logo) storage.setItem('vth_logo', data.logo);
         loadSettings();
-        showToast('Data succesvol geïmporteerd');
+        showToast('Backup teruggezet (' + (data.fotos || []).length + ' foto\'s hersteld)');
         showScreen('projectList');
         renderProjectList();
       } else {
         showToast('Ongeldig bestandsformaat');
       }
     } catch(err) {
-      showToast('Fout bij importeren: ongeldig JSON');
+      showToast('Fout bij terugzetten: ongeldig bestand');
     }
   };
   reader.readAsText(fileInput.files[0]);
+}
+
+function slaAutoBackupOp() {
+  try {
+    const backup = {
+      projects: getProjects(),
+      settings: getSettings(),
+      datum: new Date().toISOString()
+    };
+    storage.setItem('vth_autobackup', JSON.stringify(backup));
+    updateAutoBackupInfo();
+  } catch(e) {}
+}
+
+function updateAutoBackupInfo() {
+  const el = document.getElementById('autobackupInfo');
+  if (!el) return;
+  const raw = storage.getItem('vth_autobackup');
+  if (!raw) { el.textContent = 'Nog geen auto-backup aangemaakt.'; return; }
+  try {
+    const b = JSON.parse(raw);
+    const datum = new Date(b.datum);
+    const opties = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+    el.textContent = '&#10003; Auto-backup: ' + datum.toLocaleDateString('nl-NL', opties) + ' — ' + (b.projects || []).length + ' project(en)';
+  } catch(e) { el.textContent = 'Auto-backup beschikbaar.'; }
+}
+
+function herstelAutoBackup() {
+  const raw = storage.getItem('vth_autobackup');
+  if (!raw) { showToast('Geen auto-backup gevonden'); return; }
+  try {
+    const b = JSON.parse(raw);
+    if (!confirm('Auto-backup terugzetten? De huidige data wordt vervangen.')) return;
+    storage.setItem('vth_projects', JSON.stringify(b.projects || []));
+    if (b.settings) saveSettingsData(b.settings);
+    loadSettings();
+    showToast('Auto-backup teruggezet');
+    showScreen('projectList');
+    renderProjectList();
+  } catch(e) {
+    showToast('Fout bij herstel auto-backup');
+  }
 }
 
 
