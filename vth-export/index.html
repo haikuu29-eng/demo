@@ -919,6 +919,7 @@ a { color: inherit; text-decoration: none; }
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('basis', this)">Basisgegevens</button>
       <button class="tab-btn" onclick="switchTab('controles', this)">Controles</button>
+      <button class="tab-btn" onclick="switchTab('voortgang', this)">Voortgang</button>
     </div>
 
     <div id="tab-basis">
@@ -934,6 +935,8 @@ a { color: inherit; text-decoration: none; }
       <button class="btn btn-primary btn-block" onclick="openControleForm()" style="margin-bottom:16px;">+ Nieuwe Controle</button>
       <div id="controleList"></div>
     </div>
+
+    <div id="tab-voortgang" style="display:none;"></div>
   </div>
 </div>
 
@@ -5806,6 +5809,98 @@ function switchTab(tab, el) {
   el.classList.add('active');
   document.getElementById('tab-basis').style.display = tab === 'basis' ? '' : 'none';
   document.getElementById('tab-controles').style.display = tab === 'controles' ? '' : 'none';
+  document.getElementById('tab-voortgang').style.display = tab === 'voortgang' ? '' : 'none';
+  if (tab === 'voortgang') renderVoortgang();
+}
+
+function renderVoortgang() {
+  const p = getProjects().find(x => x.id === currentProjectId);
+  if (!p) return;
+
+  const controles = [...(p.controles || [])].sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
+  const voorschriften = p.voorschriften || [];
+
+  let html = '';
+
+  // ===== SECTIE 1: VOORSCHRIFTEN UIT VERGUNNING =====
+  if (voorschriften.length > 0) {
+    html += `<div class="settings-card">
+      <h3 style="margin-bottom:12px;">Voorschriften vergunning</h3>`;
+
+    voorschriften.forEach((v, idx) => {
+      // Zoek meest recente resultaat voor dit voorschrift over alle controles
+      let resultaat = null;
+      for (const c of controles) {
+        for (const o of (c.onderwerpen || [])) {
+          if (o.voorschriftResultaten && o.voorschriftResultaten[String(idx)] !== undefined) {
+            resultaat = o.voorschriftResultaten[String(idx)];
+            break;
+          }
+        }
+        if (resultaat) break;
+      }
+
+      const icon = resultaat === 'akkoord' ? '&#9989;' : resultaat === 'niet-akkoord' ? '&#10060;' : '&#9203;';
+      const kleur = resultaat === 'akkoord' ? 'var(--green)' : resultaat === 'niet-akkoord' ? 'var(--red)' : '#9E9E9E';
+      const label = resultaat === 'akkoord' ? 'Akkoord' : resultaat === 'niet-akkoord' ? 'Niet akkoord' : 'Nog niet getoetst';
+
+      html += `<div style="display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border);">
+        <span style="font-size:18px; flex-shrink:0;">${icon}</span>
+        <div style="flex:1;">
+          <span style="font-size:14px; ${resultaat === 'akkoord' ? 'color:#9E9E9E; text-decoration:line-through;' : ''}">${escapeHtml(v.tekst)}</span>
+        </div>
+        <span style="font-size:12px; color:${kleur}; white-space:nowrap; font-weight:600;">${label}</span>
+      </div>`;
+    });
+
+    html += `</div>`;
+  }
+
+  // ===== SECTIE 2: CONTROLES TIJDLIJN =====
+  html += `<div class="settings-card"><h3 style="margin-bottom:12px;">Controles</h3>`;
+
+  if (controles.length === 0) {
+    html += `<p style="color:var(--text-secondary); font-size:14px;">Nog geen controles uitgevoerd.</p>`;
+  } else {
+    controles.forEach(c => {
+      const resultClass = c.algemeenResultaat || 'geen';
+      const resultLabel = {'akkoord':'Akkoord','akkoord-mits':'Akkoord mits aanpassingen','niet-akkoord':'Niet akkoord'}[c.algemeenResultaat] || 'Geen resultaat';
+      const datum = c.datum ? formatDate(c.datum) : 'Geen datum';
+      const onderwerpen = c.onderwerpen || [];
+
+      html += `<div style="margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden;">
+        <div style="padding:12px 14px; background:var(--surface); display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border);">
+          <div>
+            <strong style="font-size:15px;">${escapeHtml(c.soort || 'Controle')}</strong>
+            <div style="font-size:13px; color:var(--text-secondary); margin-top:2px;">${datum}${c.tijd ? ' — ' + c.tijd : ''}${c.toezichthouder ? ' · ' + escapeHtml(c.toezichthouder) : ''}</div>
+          </div>
+          <span class="controle-result-badge ${resultClass}" style="font-size:12px;">${resultLabel}</span>
+        </div>`;
+
+      if (onderwerpen.length > 0) {
+        onderwerpen.forEach(o => {
+          const oClass = o.resultaat || 'geen';
+          const oLabel = {'akkoord':'✓','akkoord-mits':'~','niet-akkoord':'✗'}[o.resultaat] || '–';
+          const oKleur = {'akkoord':'var(--green)','akkoord-mits':'var(--orange)','niet-akkoord':'var(--red)'}[o.resultaat] || '#9E9E9E';
+          html += `<div style="padding:8px 14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border);">
+            <span style="font-size:16px; font-weight:700; color:${oKleur}; width:16px; text-align:center; flex-shrink:0;">${oLabel}</span>
+            <div style="flex:1;">
+              <span style="font-size:14px;">${escapeHtml(o.naam || o.onderwerp)}</span>
+              ${o.afwijking ? `<div style="font-size:12px; color:var(--red); margin-top:2px;">↳ ${escapeHtml(o.afwijking)}</div>` : ''}
+            </div>
+            ${o.bblArtikelNr ? `<span style="font-size:11px; color:var(--primary); white-space:nowrap;">${escapeHtml(o.bblArtikelNr)}</span>` : ''}
+          </div>`;
+        });
+      } else {
+        html += `<div style="padding:10px 14px; font-size:13px; color:var(--text-secondary);">Geen onderwerpen geregistreerd</div>`;
+      }
+
+      html += `</div>`;
+    });
+  }
+
+  html += `</div>`;
+  document.getElementById('tab-voortgang').innerHTML = html;
 }
 
 // ===== CONTROLE LIST =====
