@@ -5606,7 +5606,7 @@ function showScreen(screenId) {
       const p = getProjects().find(x => x.id === currentProjectId);
       if (p) {
         const adres = [p.straat, p.plaats].filter(Boolean).join(', ');
-        headerTitle.textContent = adres ? p.naam + ' — ' + adres : p.naam;
+        headerTitle.textContent = adres ? adres + ' — ' + p.naam : p.naam;
       } else {
         headerTitle.textContent = 'Project';
       }
@@ -6065,7 +6065,7 @@ function renderProjectDetail() {
   }
   
   const _adres = [p.straat, p.plaats].filter(Boolean).join(', ');
-  document.getElementById('headerTitle').textContent = _adres ? (p.naam || 'Project') + ' — ' + _adres : (p.naam || 'Project');
+  document.getElementById('headerTitle').textContent = _adres ? _adres + ' — ' + (p.naam || 'Project') : (p.naam || 'Project');
 }
 
 function detailItem(label, value, fullWidth) {
