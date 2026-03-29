@@ -1050,6 +1050,7 @@ a { color: inherit; text-decoration: none; }
     <div id="controleDetailContent"></div>
     <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
       <button class="btn btn-primary" onclick="generateReport()" style="flex:1; min-width: 200px;">&#128196; Genereer Rapport</button>
+      <button class="btn btn-secondary" onclick="mailRapport()" style="flex:1; min-width: 200px;">&#128231; Mailen</button>
       <button class="btn btn-secondary" onclick="openControleForm(currentControleId)" style="flex:1; min-width: 150px;">Bewerken</button>
       <button class="btn btn-danger" onclick="deleteControle(currentControleId)" style="flex:1; min-width: 150px;">Verwijderen</button>
     </div>
@@ -1112,6 +1113,7 @@ a { color: inherit; text-decoration: none; }
     <div id="reportPreview"></div>
     <div style="margin-top:16px; display: flex; gap: 12px;" class="no-print">
       <button class="btn btn-primary btn-block btn-lg" onclick="printMetBestandsnaam()">&#128424; Afdrukken / Opslaan als PDF</button>
+      <button class="btn btn-secondary btn-block btn-lg" onclick="mailRapport()">&#128231; Mailen</button>
     </div>
   </div>
 </div>
@@ -6691,6 +6693,58 @@ function generateReport() {
   buildPrintArea(p, c, gemeente);
   
   navigateTo('printReport');
+}
+
+function mailRapport() {
+  const p = getProjects().find(x => x.id === currentProjectId);
+  if (!p) return;
+  const c = (p.controles || []).find(x => x.id === currentControleId);
+  if (!c) return;
+
+  const settings = getSettings();
+  const gemeente = settings.gemeentenaam || 'Gemeente';
+  const datum = c.datum ? formatDate(c.datum) : 'onbekende datum';
+  const resultLabel = {'akkoord':'AKKOORD','akkoord-mits':'AKKOORD MITS AANPASSINGEN','niet-akkoord':'NIET AKKOORD'}[c.algemeenResultaat] || 'GEEN RESULTAAT';
+
+  const subject = `Controlerapport ${c.soort || 'Controle'} – ${p.naam} – ${datum}`;
+
+  let body = `${gemeente.toUpperCase()}\r\n`;
+  body += `Controlerapport Bouwtoezicht\r\n`;
+  body += `${'='.repeat(40)}\r\n\r\n`;
+  body += `RESULTAAT: ${resultLabel}\r\n\r\n`;
+
+  body += `PROJECTGEGEVENS\r\n${'-'.repeat(30)}\r\n`;
+  body += `Projectnaam:    ${p.naam}\r\n`;
+  body += `Zaaknummer:     ${p.zaaknummer || '-'}\r\n`;
+  body += `Adres:          ${[p.straat, p.postcode, p.plaats].filter(Boolean).join(', ') || '-'}\r\n`;
+  body += `Type zaak:      ${p.typeZaak || '-'}\r\n`;
+  body += `Toezichthouder: ${c.toezichthouder || '-'}\r\n`;
+  body += `Datum:          ${datum}${c.tijd ? ' om ' + c.tijd : ''}\r\n`;
+  body += `Aanwezigen:     ${c.aanwezigheid || '-'}\r\n\r\n`;
+
+  if (c.onderwerpen && c.onderwerpen.length > 0) {
+    body += `BEVINDINGEN\r\n${'-'.repeat(30)}\r\n`;
+    c.onderwerpen.forEach(o => {
+      const r = {'akkoord':'✓ AKKOORD','akkoord-mits':'~ AKKOORD MITS','niet-akkoord':'✗ NIET AKKOORD'}[o.resultaat] || '– GEEN RESULTAAT';
+      body += `\r\n${o.naam || o.onderwerp}\r\n`;
+      body += `Status: ${r}\r\n`;
+      if (o.beschrijving) body += `Gecontroleerd: ${o.beschrijving}\r\n`;
+      if (o.afwijking) body += `Afwijking: ${o.afwijking}\r\n`;
+      if (o.termijn) body += `Termijn herstel: ${o.termijn}\r\n`;
+      if (o.bblArtikelNr) body += `BBL: ${o.bblArtikelNr}\r\n`;
+    });
+    body += '\r\n';
+  }
+
+  body += `CONCLUSIE\r\n${'-'.repeat(30)}\r\n`;
+  if (c.samenvattingBevindingen) body += `Samenvatting: ${c.samenvattingBevindingen}\r\n`;
+  if (c.adviesAannemer) body += `Advies aannemer: ${c.adviesAannemer}\r\n`;
+  if (c.adviesHandhaving) body += `Advies handhaving: ${c.adviesHandhaving}\r\n`;
+
+  body += `\r\n${'='.repeat(40)}\r\nGegenereerd door VTH Bouwtoezicht\r\n`;
+
+  const mailto = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  window.location.href = mailto;
 }
 
 function buildPrintArea(p, c, gemeente) {
