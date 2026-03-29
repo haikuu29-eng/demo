@@ -5660,6 +5660,7 @@ function setFilter(el, filter) {
   document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   renderProjectList();
+  if (huidigView === 'kaart') renderKaart();
 }
 
 // ===== PROJECT LIST =====
@@ -5898,7 +5899,21 @@ function setView(view) {
 
 function renderKaart() {
   const container = document.getElementById('kaartContainer');
-  const projects = getProjects().filter(p => p.lat && p.lng);
+  const search = (document.getElementById('searchBar') || {}).value?.toLowerCase() || '';
+  const projects = getProjects().filter(p => {
+    if (!p.lat || !p.lng) return false;
+    if (search && !(
+      (p.naam || '').toLowerCase().includes(search) ||
+      (p.straat || '').toLowerCase().includes(search) ||
+      (p.plaats || '').toLowerCase().includes(search) ||
+      (p.zaaknummer || '').toLowerCase().includes(search)
+    )) return false;
+    if (currentFilter !== 'all') {
+      if (currentFilter.startsWith('type-') && p.typeZaak !== currentFilter.replace('type-', '')) return false;
+      if (currentFilter.startsWith('status-') && p.status !== currentFilter.replace('status-', '')) return false;
+    }
+    return true;
+  });
 
   if (!kaartInstantie) {
     kaartInstantie = L.map('kaartContainer').setView([52.15, 5.38], 8);
