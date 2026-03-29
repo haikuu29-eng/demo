@@ -20,6 +20,8 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>VTH Bouwtoezicht</title>
@@ -762,6 +764,13 @@ a { color: inherit; text-decoration: none; }
 }
 /* Geselecteerde tekst markering in de PDF viewer */
 #pdfTekstInhoud ::selection { background: #B2DFDB; color: #004D40; }
+
+/* ===== KAART ===== */
+#kaartContainer { height: calc(100vh - 160px); width: 100%; border-radius: var(--radius); overflow: hidden; }
+.view-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
+.view-toggle-btn { flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; color: var(--text-secondary); }
+.view-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.kaart-marker { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
 </style>
 </head>
 <body>
@@ -795,17 +804,24 @@ a { color: inherit; text-decoration: none; }
       <div class="chip" data-filter="status-Afgehandeld" onclick="setFilter(this, 'status-Afgehandeld')">Afgehandeld</div>
     </div>
 
-    <div style="display:flex; align-items:center; justify-content:flex-end; margin-bottom:8px; gap:8px;">
-      <label style="font-size:13px; color:var(--text-secondary);">Sorteer:</label>
-      <select id="sortSelect" onchange="renderProjectList()" style="font-size:13px; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text-primary);">
-        <option value="laatste-controle">Laatste controle</option>
-        <option value="aangemaakt">Datum aangemaakt</option>
-        <option value="naam">Naam (A-Z)</option>
-        <option value="status">Status</option>
-      </select>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:8px;">
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" id="btnLijst" onclick="setView('lijst')">&#128203; Lijst</button>
+        <button class="view-toggle-btn" id="btnKaart" onclick="setView('kaart')">&#128506; Kaart</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;" id="sortWrapper">
+        <label style="font-size:13px; color:var(--text-secondary);">Sorteer:</label>
+        <select id="sortSelect" onchange="renderProjectList()" style="font-size:13px; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text-primary);">
+          <option value="laatste-controle">Laatste controle</option>
+          <option value="aangemaakt">Datum aangemaakt</option>
+          <option value="naam">Naam (A-Z)</option>
+          <option value="status">Status</option>
+        </select>
+      </div>
     </div>
 
     <div class="project-list" id="projectList"></div>
+    <div id="kaartContainer" style="display:none;"></div>
   </div>
   <button class="fab no-print" onclick="openProjectForm()" aria-label="Nieuw project">+</button>
 </div>
@@ -5681,18 +5697,22 @@ function openProjectForm(projectId) {
 function saveProject() {
   const naam = document.getElementById('pf-naam').value.trim();
   const typeZaak = document.getElementById('pf-typeZaak').value;
-  
+
   if (!naam) { showToast('Vul een projectnaam in'); return; }
   if (!typeZaak) { showToast('Selecteer een type zaak'); return; }
 
   const projects = getProjects();
+  const straat = document.getElementById('pf-straat').value.trim();
+  const postcode = document.getElementById('pf-postcode').value.trim();
+  const plaats = document.getElementById('pf-plaats').value.trim();
+
   const data = {
     naam: naam,
     zaaknummer: document.getElementById('pf-zaaknummer').value.trim(),
     typeZaak: typeZaak,
-    straat: document.getElementById('pf-straat').value.trim(),
-    postcode: document.getElementById('pf-postcode').value.trim(),
-    plaats: document.getElementById('pf-plaats').value.trim(),
+    straat: straat,
+    postcode: postcode,
+    plaats: plaats,
     activiteiten: selectedActiviteiten,
     gevolgklasse: document.getElementById('pf-gevolgklasse').value,
     initNaam: document.getElementById('pf-initNaam').value.trim(),
@@ -5706,14 +5726,17 @@ function saveProject() {
   if (editingProjectId) {
     const idx = projects.findIndex(p => p.id === editingProjectId);
     if (idx !== -1) {
-      projects[idx] = { ...projects[idx], ...data };
+      // Bewaar bestaande coördinaten als adres niet veranderd is
+      const oud = projects[idx];
+      const adresGewijzigd = oud.straat !== straat || oud.postcode !== postcode || oud.plaats !== plaats;
+      if (!adresGewijzigd && oud.lat) { data.lat = oud.lat; data.lng = oud.lng; }
+      projects[idx] = { ...oud, ...data };
     }
     currentProjectId = editingProjectId;
   } else {
     data.id = generateId();
     data.controles = [];
     data.aangemaakt = new Date().toISOString();
-    // Voeg voorschriften uit PDF-import toe indien aanwezig
     if (pendingVoorschriften.length > 0) {
       data.voorschriften = pendingVoorschriften;
       pendingVoorschriften = [];
@@ -5726,9 +5749,117 @@ function saveProject() {
 
   saveProjects(projects);
   showToast('Project opgeslagen');
-  
+
+  // Geocodeer adres op de achtergrond
+  if (straat || postcode || plaats) {
+    geocodeerEnSla(currentProjectId, straat, postcode, plaats);
+  }
+
   navigationStack = ['projectList'];
   showScreen('projectDetail');
+  renderProjectDetail();
+}
+
+// ===== PDOK GEOCODING =====
+async function geocodeerEnSla(projectId, straat, postcode, plaats) {
+  const coords = await geocodeerAdres(straat, postcode, plaats);
+  if (!coords) return;
+  const projects = getProjects();
+  const idx = projects.findIndex(p => p.id === projectId);
+  if (idx === -1) return;
+  projects[idx].lat = coords.lat;
+  projects[idx].lng = coords.lng;
+  saveProjects(projects);
+}
+
+async function geocodeerAdres(straat, postcode, plaats) {
+  const q = [straat, postcode, plaats].filter(Boolean).join(' ');
+  if (!q.trim()) return null;
+  try {
+    const url = 'https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=' + encodeURIComponent(q) + '&fl=centroide_ll&rows=1';
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const docs = data.response?.docs;
+    if (!docs || docs.length === 0) return null;
+    const point = docs[0].centroide_ll; // "POINT(lon lat)"
+    const m = point.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+    if (!m) return null;
+    return { lng: parseFloat(m[1]), lat: parseFloat(m[2]) };
+  } catch(e) { return null; }
+}
+
+// ===== KAARTWEERGAVE =====
+let kaartInstantie = null;
+let huidigView = 'lijst';
+
+function setView(view) {
+  huidigView = view;
+  document.getElementById('btnLijst').classList.toggle('active', view === 'lijst');
+  document.getElementById('btnKaart').classList.toggle('active', view === 'kaart');
+  document.getElementById('projectList').style.display = view === 'lijst' ? '' : 'none';
+  document.getElementById('kaartContainer').style.display = view === 'kaart' ? '' : 'none';
+  document.getElementById('sortWrapper').style.display = view === 'lijst' ? '' : 'none';
+  if (view === 'kaart') renderKaart();
+}
+
+function renderKaart() {
+  const container = document.getElementById('kaartContainer');
+  const projects = getProjects().filter(p => p.lat && p.lng);
+
+  if (!kaartInstantie) {
+    kaartInstantie = L.map('kaartContainer').setView([52.15, 5.38], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19
+    }).addTo(kaartInstantie);
+  } else {
+    kaartInstantie.eachLayer(l => { if (l instanceof L.Marker) kaartInstantie.removeLayer(l); });
+  }
+
+  if (projects.length === 0) {
+    showToast('Geen projecten met coördinaten gevonden');
+    return;
+  }
+
+  const statusKleuren = {
+    'Open': '#1B6B6B',
+    'In uitvoering': '#E65100',
+    'Opgeleverd': '#2E7D32',
+    'Afgehandeld': '#757575'
+  };
+
+  const bounds = [];
+  projects.forEach(p => {
+    const kleur = statusKleuren[p.status] || '#1B6B6B';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="kaart-marker" style="background:${kleur};"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+      popupAnchor: [0, -10]
+    });
+    const marker = L.marker([p.lat, p.lng], { icon }).addTo(kaartInstantie);
+    const controles = (p.controles || []).length;
+    const laatste = (p.controles || []).sort((a,b) => (b.datum||'').localeCompare(a.datum||''))[0];
+    marker.bindPopup(`
+      <strong>${escapeHtml(p.naam)}</strong><br>
+      ${escapeHtml([p.straat, p.plaats].filter(Boolean).join(', '))}<br>
+      <span style="color:${kleur}; font-weight:600;">${p.status || 'Open'}</span><br>
+      ${laatste ? '📅 ' + formatDate(laatste.datum) : 'Nog geen controles'}<br>
+      <a href="#" onclick="event.preventDefault(); kaartNaarProject('${p.id}')" style="color:var(--primary);">Ga naar project →</a>
+    `);
+    bounds.push([p.lat, p.lng]);
+  });
+
+  if (bounds.length > 0) kaartInstantie.fitBounds(bounds, { padding: [40, 40] });
+  setTimeout(() => kaartInstantie.invalidateSize(), 100);
+}
+
+function kaartNaarProject(id) {
+  currentProjectId = id;
+  setView('lijst');
+  navigateTo('projectDetail');
   renderProjectDetail();
 }
 
