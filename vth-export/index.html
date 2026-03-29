@@ -20,7 +20,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>VTH Bouwtoezicht</title>
+<title>OmgevingsCheck</title>
 <style>
 /* ===== CSS RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,6 +75,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   min-height: 60px;
 }
+.app-header h1 { flex: 1; text-align: center; }
 .app-header .back-btn {
   background: rgba(255,255,255,0.15);
   border: none;
@@ -774,7 +775,7 @@ a { color: inherit; text-decoration: none; }
 <!-- HEADER -->
 <header class="app-header" id="appHeader">
   <button class="back-btn hidden" id="backBtn" onclick="goBack()" aria-label="Terug">&#8592;</button>
-  <h1 id="headerTitle">VTH Bouwtoezicht</h1>
+  <h1 id="headerTitle">OmgevingsCheck</h1>
   <div class="header-actions">
     <button class="icon-btn" onclick="exportData()" aria-label="Backup maken" title="Backup opslaan als bestand" id="backupBtn">&#128190;</button>
     <button class="icon-btn" onclick="showScreen('settings')" aria-label="Instellingen" title="Instellingen">&#9881;</button>
@@ -1098,7 +1099,7 @@ a { color: inherit; text-decoration: none; }
 
     <div class="settings-card">
       <h3>Over</h3>
-      <p style="color: var(--text-secondary); font-size: 14px;">VTH Bouwtoezicht App v1.0<br>Offline webapp voor gemeentelijk toezicht op bouwactiviteiten.<br>Alle data wordt lokaal opgeslagen in uw browser.</p>
+      <p style="color: var(--text-secondary); font-size: 14px;">OmgevingsCheck App v1.0<br>Offline webapp voor gemeentelijk toezicht op bouwactiviteiten.<br>Alle data wordt lokaal opgeslagen in uw browser.</p>
     </div>
   </div>
 </div>
@@ -5500,7 +5501,7 @@ function showScreen(screenId) {
   
   if (screenId === 'projectList') {
     backBtn.classList.add('hidden');
-    headerTitle.textContent = 'VTH Bouwtoezicht';
+    headerTitle.textContent = 'OmgevingsCheck';
     if (fab) fab.style.display = '';
     navigationStack = [];
   } else {
@@ -6679,7 +6680,7 @@ function generateReport() {
     ${c.adviesHandhaving ? `<p style="margin: 8px 0;"><strong>Advies richting handhaving:</strong><br>${escapeHtml(c.adviesHandhaving)}</p>` : ''}
 
     <div style="margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-secondary);">
-      Gegenereerd door VTH Bouwtoezicht — ${new Date().toLocaleDateString('nl-NL')}
+      Gegenereerd door OmgevingsCheck — ${new Date().toLocaleDateString('nl-NL')}
     </div>
   </div>`;
 
@@ -6737,7 +6738,7 @@ function mailRapport() {
   if (c.adviesAannemer) body += `Advies aannemer: ${c.adviesAannemer}\r\n`;
   if (c.adviesHandhaving) body += `Advies handhaving: ${c.adviesHandhaving}\r\n`;
 
-  body += `\r\n${'='.repeat(40)}\r\nGegenereerd door VTH Bouwtoezicht\r\n`;
+  body += `\r\n${'='.repeat(40)}\r\nGegenereerd door OmgevingsCheck\r\n`;
 
   const mailto = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
   window.location.href = mailto;
@@ -6813,7 +6814,7 @@ function buildPrintArea(p, c, gemeente) {
       ${c.adviesHandhaving ? `<p><strong>Advies richting handhaving:</strong><br>${escapeHtml(c.adviesHandhaving)}</p>` : ''}
     </div>
     <div class="print-footer">
-      ${escapeHtml(gemeente)} — VTH Bouwtoezicht — Gegenereerd op ${new Date().toLocaleDateString('nl-NL')} om ${new Date().toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit'})}
+      ${escapeHtml(gemeente)} — OmgevingsCheck — Gegenereerd op ${new Date().toLocaleDateString('nl-NL')} om ${new Date().toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit'})}
     </div>
   </div>`;
 
