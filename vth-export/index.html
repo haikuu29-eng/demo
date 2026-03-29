@@ -244,6 +244,38 @@ a { color: inherit; text-decoration: none; }
   transition: all var(--transition);
 }
 .fab:hover { background: #A5521F; transform: scale(1.05); }
+.fab-import {
+  position: fixed;
+  bottom: 104px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #1B6B6B;
+  color: #fff;
+  border: none;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(27,107,107,0.4);
+  cursor: pointer;
+  z-index: 50;
+  transition: all var(--transition);
+}
+.fab-import:hover { background: #145454; transform: scale(1.05); }
+/* XLS import modal */
+#xlsImportModal .modal { max-width: 680px; width: 96vw; max-height: 90vh; display: flex; flex-direction: column; }
+#xlsImportModal .modal-body { overflow-y: auto; flex: 1; }
+.xls-preview-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+.xls-preview-table th { background: var(--primary); color: #fff; padding: 8px 10px; text-align: left; position: sticky; top: 0; }
+.xls-preview-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.xls-preview-table tr:nth-child(even) td { background: var(--surface); }
+.xls-preview-table tr.xls-duplicate td { opacity: 0.5; }
+.xls-status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.xls-status-open { background: #E3F2FD; color: #1565C0; }
+.xls-status-resolved { background: #E8F5E9; color: #2E7D32; }
+.xls-import-progress { margin-top: 10px; font-size: 13px; color: var(--text-secondary); }
 
 /* ===== FORMS ===== */
 .form-group {
@@ -821,6 +853,60 @@ a { color: inherit; text-decoration: none; }
     <div id="kaartContainer" style="display:none;"></div>
   </div>
   <button class="fab no-print" onclick="openProjectForm()" aria-label="Nieuw project">+</button>
+  <button class="fab-import no-print" onclick="openXlsImport()" aria-label="Importeer XLS" title="Zaken importeren uit XLS" id="fabImport">&#128196;</button>
+</div>
+
+<!-- ===== MODAL: XLS IMPORT ===== -->
+<div class="modal-overlay" id="xlsImportModal" style="display:none;">
+  <div class="modal" style="max-width:700px; width:96vw; max-height:90vh; display:flex; flex-direction:column;">
+    <h2 style="margin-bottom:4px;">&#128196; Zaken importeren uit XLS</h2>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;">Selecteer een XLS-export uit je zakensysteem. Nieuwe zaken worden automatisch geocodeerd via PDOK.</p>
+
+    <div id="xlsStap1">
+      <div class="form-group">
+        <label>XLS-bestand selecteren</label>
+        <input type="file" id="xlsFileInput" accept=".xls,.xlsx,.csv" style="padding:10px; border:1px solid var(--border); border-radius:var(--radius-sm); width:100%; box-sizing:border-box;"
+          onchange="handleXlsFile(event)">
+      </div>
+      <div id="xlsLaadStatus" style="font-size:13px; color:var(--text-secondary); min-height:20px;"></div>
+    </div>
+
+    <div id="xlsStap2" style="display:none; flex:1; overflow:hidden; display:none; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+        <span id="xlsAantalInfo" style="font-size:13px; color:var(--text-secondary);"></span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="xlsSelecteerAlles()">Alles selecteren</button>
+          <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="xlsDeselecteerAlles()">Alles deselecteren</button>
+        </div>
+      </div>
+      <div style="overflow-y:auto; flex:1; max-height:340px; border:1px solid var(--border); border-radius:var(--radius-sm);">
+        <table class="xls-preview-table" id="xlsPreviewTable">
+          <thead>
+            <tr>
+              <th style="width:36px;"><input type="checkbox" id="xlsAllesCheck" onchange="xlsToggleAlles(this.checked)"></th>
+              <th>Zaaknummer</th>
+              <th>Beschrijving</th>
+              <th>Adres</th>
+              <th>Datum</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="xlsPreviewBody"></tbody>
+        </table>
+      </div>
+      <div id="xlsImportProgress" class="xls-import-progress" style="display:none;"></div>
+      <div id="xlsDuplicaatWaarschuwing" style="display:none; margin-top:8px; padding:8px 12px; background:#FFF3E0; border-radius:var(--radius-sm); font-size:12px; color:#E65100;">
+        &#9888; Grijs gemarkeerde rijen zijn al aanwezig (zaaknummer bestaat). Ze worden overgeslagen tenzij je ze aanvinkt.
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:14px; flex-shrink:0;">
+      <button class="btn btn-secondary" onclick="sluitXlsImport()">Annuleren</button>
+      <button class="btn btn-primary" id="btnXlsImporteer" style="display:none;" onclick="importeerXlsGeselecteerd()">
+        &#8659; Importeer geselecteerde zaken
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== SCREEN: PROJECT FORM ===== -->
@@ -5498,15 +5584,18 @@ function showScreen(screenId) {
   const backBtn = document.getElementById('backBtn');
   const headerTitle = document.getElementById('headerTitle');
   const fab = document.querySelector('.fab');
-  
+  const fabImport = document.getElementById('fabImport');
+
   if (screenId === 'projectList') {
     backBtn.classList.add('hidden');
     headerTitle.textContent = 'OmgevingsCheck';
     if (fab) fab.style.display = '';
+    if (fabImport) fabImport.style.display = '';
     navigationStack = [];
   } else {
     backBtn.classList.remove('hidden');
     if (fab) fab.style.display = 'none';
+    if (fabImport) fabImport.style.display = 'none';
   }
 
   switch(screenId) {
@@ -7678,6 +7767,241 @@ function formatDate(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
     return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
   } catch(e) { return dateStr; }
+}
+
+// ===== XLS IMPORT =====
+let xlsRijen = []; // geparsede rijen voor preview
+let sheetJsGeladen = false;
+
+function openXlsImport() {
+  document.getElementById('xlsImportModal').style.display = 'flex';
+  document.getElementById('xlsStap1').style.display = '';
+  document.getElementById('xlsStap2').style.display = 'none';
+  document.getElementById('btnXlsImporteer').style.display = 'none';
+  document.getElementById('xlsFileInput').value = '';
+  document.getElementById('xlsLaadStatus').textContent = '';
+  xlsRijen = [];
+  laadSheetJs();
+}
+
+function sluitXlsImport() {
+  document.getElementById('xlsImportModal').style.display = 'none';
+}
+
+function laadSheetJs() {
+  if (sheetJsGeladen || window.XLSX) { sheetJsGeladen = true; return; }
+  const script = document.createElement('script');
+  script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+  script.onload = () => { sheetJsGeladen = true; };
+  script.onerror = () => {
+    document.getElementById('xlsLaadStatus').textContent = '⚠ SheetJS kon niet worden geladen. Controleer je internetverbinding.';
+  };
+  document.head.appendChild(script);
+}
+
+function excelSeriaalNaarDatum(serial) {
+  // Excel serial date naar ISO-datumstring
+  if (!serial || isNaN(serial)) return '';
+  const ms = (serial - 25569) * 86400000;
+  const d = new Date(ms);
+  if (isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
+
+function parseZaakonderwerp(onderwerp) {
+  // Formaat: "beschrijving - straat nr, postcode plaats - referentie "
+  const delen = onderwerp.split(' - ');
+  const naam = (delen[0] || '').trim();
+  let straat = '', postcode = '', plaats = '', referentie = '';
+  if (delen.length >= 2) {
+    const adresDeel = delen[1].trim();
+    const kommaIdx = adresDeel.indexOf(',');
+    if (kommaIdx !== -1) {
+      straat = adresDeel.slice(0, kommaIdx).trim();
+      const rest = adresDeel.slice(kommaIdx + 1).trim();
+      const spaceIdx = rest.indexOf(' ');
+      if (spaceIdx !== -1) {
+        postcode = rest.slice(0, spaceIdx).trim();
+        plaats = rest.slice(spaceIdx + 1).trim();
+      } else {
+        postcode = rest;
+      }
+    } else {
+      straat = adresDeel;
+    }
+  }
+  if (delen.length >= 3) {
+    referentie = delen[2].trim();
+  }
+  return { naam, straat, postcode, plaats, referentie };
+}
+
+function xlsStatusNaarApp(status) {
+  if (!status) return 'Open';
+  const s = status.toLowerCase().trim();
+  if (s === 'resolved') return 'Opgeleverd';
+  if (s === 'open') return 'Open';
+  return 'Open';
+}
+
+function handleXlsFile(event) {
+  const bestand = event.target.files[0];
+  if (!bestand) return;
+  const statusEl = document.getElementById('xlsLaadStatus');
+  statusEl.textContent = 'Bestand lezen...';
+
+  const leesBestand = () => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array', cellDates: false });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rijen = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        if (rijen.length < 2) {
+          statusEl.textContent = 'Geen gegevens gevonden in het bestand.';
+          return;
+        }
+        // Zoek header rij (rij met 'Status' en 'Zaaknummer')
+        let headerIdx = 0;
+        for (let i = 0; i < Math.min(5, rijen.length); i++) {
+          if (rijen[i].includes('Zaaknummer') || rijen[i].includes('Status')) {
+            headerIdx = i;
+            break;
+          }
+        }
+        const headers = rijen[headerIdx].map(h => (h || '').toString().toLowerCase().trim());
+        const colStatus = headers.indexOf('status');
+        const colZaak = headers.findIndex(h => h.includes('zaaknummer'));
+        const colDatum = headers.findIndex(h => h === 'registratiedatum' && !h.includes('volledig'));
+        const colType = headers.findIndex(h => h.includes('zaaktype'));
+        const colOnderwerp = headers.findIndex(h => h.includes('zaakonderwerp'));
+
+        const bestaandeZaaknummers = new Set(getProjects().map(p => (p.zaaknummer || '').toString().trim()));
+
+        xlsRijen = [];
+        for (let r = headerIdx + 1; r < rijen.length; r++) {
+          const rij = rijen[r];
+          if (!rij || rij.every(c => c === '')) continue;
+          const onderwerpRaw = colOnderwerp >= 0 ? (rij[colOnderwerp] || '').toString() : '';
+          const parsed = parseZaakonderwerp(onderwerpRaw);
+          const zaakNrRaw = colZaak >= 0 ? rij[colZaak] : '';
+          const zaakNr = zaakNrRaw ? String(Math.round(parseFloat(zaakNrRaw))) : '';
+          const datum = colDatum >= 0 ? excelSeriaalNaarDatum(rij[colDatum]) : '';
+          const statusApp = xlsStatusNaarApp(colStatus >= 0 ? rij[colStatus] : '');
+          const zaakType = colType >= 0 ? (rij[colType] || '').toString() : '';
+          const isDuplicaat = zaakNr && bestaandeZaaknummers.has(zaakNr);
+          xlsRijen.push({ zaakNr, statusApp, zaakType, datum, ...parsed, isDuplicaat, geselecteerd: !isDuplicaat });
+        }
+
+        vulXlsPreviewTabel();
+        document.getElementById('xlsStap2').style.display = 'flex';
+        document.getElementById('xlsStap2').style.flexDirection = 'column';
+        document.getElementById('btnXlsImporteer').style.display = '';
+        statusEl.textContent = '';
+
+        const aantalDuplicaten = xlsRijen.filter(r => r.isDuplicaat).length;
+        const duWaarsch = document.getElementById('xlsDuplicaatWaarschuwing');
+        duWaarsch.style.display = aantalDuplicaten > 0 ? '' : 'none';
+      } catch(err) {
+        statusEl.textContent = '⚠ Fout bij lezen: ' + err.message;
+      }
+    };
+    reader.readAsArrayBuffer(bestand);
+  };
+
+  if (!window.XLSX) {
+    statusEl.textContent = 'SheetJS laden...';
+    const poging = setInterval(() => {
+      if (window.XLSX) { clearInterval(poging); leesBestand(); }
+    }, 200);
+    setTimeout(() => { clearInterval(poging); if (!window.XLSX) statusEl.textContent = '⚠ Kan SheetJS niet laden. Controleer internet.'; }, 8000);
+  } else {
+    leesBestand();
+  }
+}
+
+function vulXlsPreviewTabel() {
+  const tbody = document.getElementById('xlsPreviewBody');
+  const aantalEl = document.getElementById('xlsAantalInfo');
+  tbody.innerHTML = '';
+  xlsRijen.forEach((rij, idx) => {
+    const tr = document.createElement('tr');
+    if (rij.isDuplicaat) tr.className = 'xls-duplicate';
+    const statusKlasse = rij.statusApp === 'Opgeleverd' ? 'xls-status-resolved' : 'xls-status-open';
+    const adresTekst = [rij.straat, rij.postcode + (rij.plaats ? ' ' + rij.plaats : '')].filter(Boolean).join(', ');
+    tr.innerHTML = `
+      <td><input type="checkbox" data-idx="${idx}" ${rij.geselecteerd ? 'checked' : ''}
+        onchange="xlsRijen[${idx}].geselecteerd = this.checked"></td>
+      <td style="font-weight:600; white-space:nowrap;">${escapeHtml(rij.zaakNr)}</td>
+      <td style="max-width:200px;">${escapeHtml(rij.naam)}</td>
+      <td style="white-space:nowrap;">${escapeHtml(adresTekst)}</td>
+      <td style="white-space:nowrap;">${rij.datum ? rij.datum.split('-').reverse().join('-') : ''}</td>
+      <td><span class="xls-status-badge ${statusKlasse}">${escapeHtml(rij.statusApp)}</span>
+        ${rij.isDuplicaat ? '<br><span style="font-size:10px; color:var(--text-secondary);">Al aanwezig</span>' : ''}</td>`;
+    tbody.appendChild(tr);
+  });
+  const geselecteerd = xlsRijen.filter(r => r.geselecteerd).length;
+  aantalEl.textContent = `${xlsRijen.length} rijen gevonden — ${geselecteerd} geselecteerd`;
+  document.getElementById('xlsAllesCheck').checked = xlsRijen.every(r => r.geselecteerd);
+}
+
+function xlsToggleAlles(checked) {
+  xlsRijen.forEach(r => r.geselecteerd = checked);
+  vulXlsPreviewTabel();
+}
+
+function xlsSelecteerAlles() { xlsToggleAlles(true); }
+function xlsDeselecteerAlles() { xlsToggleAlles(false); }
+
+async function importeerXlsGeselecteerd() {
+  const teImporteren = xlsRijen.filter(r => r.geselecteerd);
+  if (teImporteren.length === 0) { showToast('Geen rijen geselecteerd'); return; }
+
+  const btnImport = document.getElementById('btnXlsImporteer');
+  const progressEl = document.getElementById('xlsImportProgress');
+  btnImport.disabled = true;
+  progressEl.style.display = '';
+
+  const projects = getProjects();
+  let aangemaakt = 0;
+
+  for (let i = 0; i < teImporteren.length; i++) {
+    const rij = teImporteren[i];
+    progressEl.textContent = `Importeren... ${i + 1} / ${teImporteren.length}${rij.straat ? ' — PDOK: ' + rij.straat : ''}`;
+
+    const nieuw = {
+      id: generateId(),
+      naam: rij.naam || ('Zaak ' + rij.zaakNr),
+      zaaknummer: rij.zaakNr,
+      typeZaak: rij.zaakType || 'Bouwvergunning',
+      status: rij.statusApp,
+      straat: rij.straat,
+      postcode: rij.postcode,
+      plaats: rij.plaats,
+      aangemaakt: rij.datum || new Date().toISOString().slice(0, 10),
+      controles: [],
+      voorschriften: [],
+      lat: null,
+      lng: null
+    };
+    projects.push(nieuw);
+    saveProjects(projects);
+    aangemaakt++;
+
+    // PDOK geocoding
+    if (rij.straat) {
+      geocodeerEnSla(nieuw.id, rij.straat, rij.postcode, rij.plaats);
+    }
+  }
+
+  progressEl.textContent = `✓ ${aangemaakt} zaak/zaken geïmporteerd${aangemaakt > 0 && teImporteren.some(r => r.straat) ? ' — PDOK geocoding loopt op de achtergrond' : ''}.`;
+  btnImport.disabled = false;
+  setTimeout(() => {
+    sluitXlsImport();
+    renderProjectList();
+    showToast(aangemaakt + ' zaak/zaken geïmporteerd');
+  }, 1500);
 }
 
 // ===== INIT =====
