@@ -5604,7 +5604,12 @@ function showScreen(screenId) {
       break;
     case 'projectDetail':
       const p = getProjects().find(x => x.id === currentProjectId);
-      headerTitle.textContent = p ? p.naam : 'Project';
+      if (p) {
+        const adres = [p.straat, p.plaats].filter(Boolean).join(', ');
+        headerTitle.textContent = adres ? p.naam + ' — ' + adres : p.naam;
+      } else {
+        headerTitle.textContent = 'Project';
+      }
       break;
     case 'controleForm':
       headerTitle.textContent = editingControleId ? 'Controle Bewerken' : 'Nieuwe Controle';
@@ -6059,7 +6064,8 @@ function renderProjectDetail() {
     }
   }
   
-  document.getElementById('headerTitle').textContent = p.naam || 'Project';
+  const _adres = [p.straat, p.plaats].filter(Boolean).join(', ');
+  document.getElementById('headerTitle').textContent = _adres ? (p.naam || 'Project') + ' — ' + _adres : (p.naam || 'Project');
 }
 
 function detailItem(label, value, fullWidth) {
