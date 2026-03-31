@@ -5864,6 +5864,8 @@ async function geocodeerEnSla(projectId, straat, postcode, plaats) {
   if (idx === -1) return;
   projects[idx].lat = coords.lat;
   projects[idx].lng = coords.lng;
+  if (coords.rdX) projects[idx].rdX = coords.rdX;
+  if (coords.rdY) projects[idx].rdY = coords.rdY;
   saveProjects(projects);
 }
 
@@ -5871,16 +5873,23 @@ async function geocodeerAdres(straat, postcode, plaats) {
   const q = [straat, postcode, plaats].filter(Boolean).join(' ');
   if (!q.trim()) return null;
   try {
-    const url = 'https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=' + encodeURIComponent(q) + '&fl=centroide_ll&rows=1';
+    const url = 'https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=' + encodeURIComponent(q) + '&fl=centroide_ll,centroide_rd&rows=1';
     const resp = await fetch(url);
     if (!resp.ok) return null;
     const data = await resp.json();
     const docs = data.response?.docs;
     if (!docs || docs.length === 0) return null;
-    const point = docs[0].centroide_ll; // "POINT(lon lat)"
-    const m = point.match(/POINT\(([^ ]+) ([^ )]+)\)/);
-    if (!m) return null;
-    return { lng: parseFloat(m[1]), lat: parseFloat(m[2]) };
+    const pointLL = docs[0].centroide_ll; // "POINT(lon lat)"
+    const mLL = pointLL.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+    if (!mLL) return null;
+    const result = { lng: parseFloat(mLL[1]), lat: parseFloat(mLL[2]) };
+    // RD-coördinaten voor Regels op de kaart deeplink
+    const pointRD = docs[0].centroide_rd; // "POINT(x y)"
+    if (pointRD) {
+      const mRD = pointRD.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+      if (mRD) { result.rdX = parseFloat(mRD[1]); result.rdY = parseFloat(mRD[2]); }
+    }
+    return result;
   } catch(e) { return null; }
 }
 
@@ -6061,7 +6070,13 @@ function renderProjectDetail() {
   const rodkContainer = document.getElementById('rodkKnop');
   if (rodkContainer) {
     if (p.lat && p.lng) {
-      const url = `https://omgevingswet.overheid.nl/regels-op-de-kaart/viewer/locatie?locatie-stelsel=ETRS89&locatie-x=${p.lng}&locatie-y=${p.lat}&regelsandere=regels`;
+      let url;
+      if (p.rdX && p.rdY) {
+        url = `https://omgevingswet.overheid.nl/regels-op-de-kaart/zoeken/locatie?locatie-stelsel=RD&locatie-x=${Math.round(p.rdX)}&locatie-y=${Math.round(p.rdY)}`;
+      } else {
+        // Fallback: WGS84 benadering via ETRS89 (voor bestaande projecten zonder RD)
+        url = `https://omgevingswet.overheid.nl/regels-op-de-kaart/zoeken/locatie?locatie-stelsel=ETRS89&locatie-x=${p.lng}&locatie-y=${p.lat}`;
+      }
       rodkContainer.innerHTML = `
         <a href="${url}" target="_blank" rel="noopener"
           style="display:flex; align-items:center; gap:10px; padding:14px 16px; background:var(--primary-light);
