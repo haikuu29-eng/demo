@@ -909,6 +909,73 @@ a { color: inherit; text-decoration: none; }
   </div>
 </div>
 
+<!-- ===== MODAL: SJABLOON KIEZEN ===== -->
+<div class="modal-overlay" id="sjabloonKiezerModal" style="display:none;">
+  <div class="modal" style="max-width:560px; width:96vw;">
+    <h2 style="margin-bottom:4px;">📋 Sjabloon toepassen</h2>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;">
+      Kies een sjabloon. De onderwerpen worden toegevoegd aan de huidige controle.
+    </p>
+    <div id="sjabloonKiezerLijst" style="max-height:400px; overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn btn-secondary" onclick="sluitSjabloonKiezer()">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: SJABLOON BEHEER ===== -->
+<div class="modal-overlay" id="sjabloonBeheerModal" style="display:none;">
+  <div class="modal" style="max-width:600px; width:96vw; max-height:90vh; overflow-y:auto;">
+    <h2 style="margin-bottom:14px;">📋 Sjablonen beheren</h2>
+    <div id="sjabloonBeheerLijst"></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn btn-secondary" onclick="sluitSjabloonBeheer()">Sluiten</button>
+      <button class="btn btn-primary" onclick="openSjabloonForm(null)">+ Nieuw sjabloon</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: SJABLOON FORM ===== -->
+<div class="modal-overlay" id="sjabloonFormModal" style="display:none;">
+  <div class="modal" style="max-width:600px; width:96vw; max-height:90vh; overflow-y:auto;">
+    <h2 id="sjabloonFormTitel" style="margin-bottom:14px;">Nieuw sjabloon</h2>
+    <div class="form-group">
+      <label>Naam sjabloon *</label>
+      <input type="text" id="sf-naam" placeholder="Bijv. Dakkapel — eerste opname">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Zaaktype (optioneel)</label>
+        <select id="sf-zaaktype">
+          <option value="">Alle zaaktypen</option>
+          <option>Bouwvergunning</option>
+          <option>Melding handhaving</option>
+          <option>Handhavingsverzoek</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Soort controle (optioneel)</label>
+        <select id="sf-soort">
+          <option value="">Alle soorten</option>
+          <option>Aanloopcontrole</option>
+          <option>Tussentijdse controle</option>
+          <option>Eindcontrole</option>
+          <option>Hercontrole</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+      <strong style="font-size:14px;">Onderwerpen</strong>
+      <button type="button" class="btn btn-secondary" style="font-size:12px; padding:5px 12px;" onclick="sfVoegOnderwerpToe()">+ Toevoegen</button>
+    </div>
+    <div id="sfOnderwerpLijst" style="margin-bottom:14px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="sluitSjabloonForm()">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveSjabloon()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== SCREEN: PROJECT FORM ===== -->
 <div class="screen" id="screen-projectForm">
   <div class="main-content">
@@ -1100,6 +1167,12 @@ a { color: inherit; text-decoration: none; }
       </div>
 
       <div class="form-section-title">Onderwerpen</div>
+      <div id="sjabloonKiesRij" style="margin-bottom:10px;">
+        <button type="button" class="btn btn-secondary btn-block" onclick="openSjabloonKiezer()"
+          style="border-style:dashed; font-size:13px;">
+          📋 Sjabloon toepassen
+        </button>
+      </div>
       <div id="onderwerpCards"></div>
       <button class="btn btn-secondary btn-block" onclick="openOnderwerpModal()" style="margin-bottom: 20px;">+ Onderwerp toevoegen</button>
 
@@ -1167,6 +1240,12 @@ a { color: inherit; text-decoration: none; }
         &#128444; Logo uploaden
         <input type="file" accept="image/*" id="logoInput" style="display:none;" onchange="handleLogoUpload(event)">
       </label>
+    </div>
+
+    <div class="settings-card">
+      <h3>Controlesjablonen</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">Maak vaste checklists aan per zaaktype of controlemethode.</p>
+      <button class="btn btn-primary btn-block" onclick="openSjabloonBeheer()">📋 Sjablonen beheren</button>
     </div>
 
     <div class="settings-card">
@@ -7828,6 +7907,252 @@ function formatDate(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
     return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
   } catch(e) { return dateStr; }
+}
+
+// ===== CONTROLESJABLONEN =====
+
+const STANDAARD_SJABLONEN = [
+  {
+    id: 'tpl_dakkapel_eerste', naam: 'Dakkapel — aanloopcontrole',
+    zaaktype: 'Bouwvergunning', soort: 'Aanloopcontrole',
+    onderwerpen: [
+      { naam: 'Bouwveiligheid omgeving', beschrijving: 'Controleer of de omgeving veilig is afgeschermd (steigers, vangnetten).', bblArtikel: '4.1' },
+      { naam: 'Maatvoering dakkapel', beschrijving: 'Controleer hoogte, breedte en diepte conform de vergunde tekening.', bblArtikel: '4.34' },
+      { naam: 'Constructieve aansluiting op kap', beschrijving: 'Controleer bevestiging en draagvermogen van de dakconstructie.', bblArtikel: '4.2' },
+      { naam: 'Plaatsing conform tekening', beschrijving: 'Vergelijk werkelijke ligging met vergunde situatie (positie op dak).', bblArtikel: '4.34' },
+    ]
+  },
+  {
+    id: 'tpl_dakkapel_eind', naam: 'Dakkapel — eindcontrole',
+    zaaktype: 'Bouwvergunning', soort: 'Eindcontrole',
+    onderwerpen: [
+      { naam: 'Waterdichtheid aansluiting dak', beschrijving: 'Controleer kitvoeg, loodslabben en dakbedekking rondom dakkapel.', bblArtikel: '4.40' },
+      { naam: 'Brandveiligheid dakbedekking', beschrijving: 'Controleer of dakbedekking voldoet aan brandklasse vereisten.', bblArtikel: '3.9' },
+      { naam: 'Ventilatie verblijfsgebied', beschrijving: 'Controleer aanwezigheid en afmeting van ventilatieopeningen.', bblArtikel: '3.52' },
+      { naam: 'Maatvoering conform vergunning', beschrijving: 'Eindmeting: hoogte, breedte en diepte conform vergunning.', bblArtikel: '4.34' },
+      { naam: 'Daglichttoetreding', beschrijving: 'Controleer of ramen/kozijnen voldoen aan daglichteis.', bblArtikel: '3.50' },
+    ]
+  },
+  {
+    id: 'tpl_aanbouw_ruwbouw', naam: 'Aanbouw/uitbouw — ruwbouw',
+    zaaktype: 'Bouwvergunning', soort: 'Tussentijdse controle',
+    onderwerpen: [
+      { naam: 'Fundering', beschrijving: 'Controleer funderingsdiepte, -breedte en -type conform berekening.', bblArtikel: '4.20' },
+      { naam: 'Constructieve veiligheid', beschrijving: 'Controleer wanden, balken en draagconstructie conform constructieberekening.', bblArtikel: '4.2' },
+      { naam: 'Maatvoeringen', beschrijving: 'Controleer alle maatvoering conform vergunde tekeningen (situering, oppervlak, hoogte).', bblArtikel: '4.34' },
+      { naam: 'Bouwveiligheid', beschrijving: 'Controleer afzettingen, valbeveiliging en ordelijkheid bouwplaats.', bblArtikel: '4.1' },
+    ]
+  },
+  {
+    id: 'tpl_aanbouw_eind', naam: 'Aanbouw/uitbouw — eindcontrole',
+    zaaktype: 'Bouwvergunning', soort: 'Eindcontrole',
+    onderwerpen: [
+      { naam: 'Maatvoering conform vergunning', beschrijving: 'Eindmeting situering, oppervlak en hoogte conform vergunning.', bblArtikel: '4.34' },
+      { naam: 'Thermische isolatie', beschrijving: 'Controleer Rc-waarde isolatie gevels, dak en vloer.', bblArtikel: '4.175' },
+      { naam: 'Ventilatie', beschrijving: 'Controleer ventilatievoorzieningen verblijfsgebied.', bblArtikel: '3.52' },
+      { naam: 'Daglichttoetreding', beschrijving: 'Controleer daglichtoppervlak ramen nieuw verblijfsgebied.', bblArtikel: '3.50' },
+      { naam: 'Waterdichtheid', beschrijving: 'Controleer dakafwerking, hemelwaterafvoer en kelderwanden.', bblArtikel: '4.40' },
+      { naam: 'Brandveiligheid', beschrijving: 'Controleer brandwerendheid constructie en vluchtveiligheid.', bblArtikel: '3.9' },
+    ]
+  },
+  {
+    id: 'tpl_isolatie', naam: 'Isolatie / gevelrenovatie',
+    zaaktype: 'Bouwvergunning', soort: 'Tussentijdse controle',
+    onderwerpen: [
+      { naam: 'Isolatiemateriaal en dikte', beschrijving: 'Controleer type isolatie, Rd-waarde en dikte conform bestek.', bblArtikel: '4.175' },
+      { naam: 'Dampscherm', beschrijving: 'Controleer aanwezigheid en correcte overlapping van dampscherm/folie.', bblArtikel: '4.40' },
+      { naam: 'Ventilatie spouwruimte', beschrijving: 'Controleer ventilatieroosters en spouwventilatie.', bblArtikel: '3.52' },
+      { naam: 'Aansluiting kozijnen en doorvoeringen', beschrijving: 'Controleer luchtdichte aansluitingen rondom kozijnen en installatiedoorvoeren.', bblArtikel: '4.40' },
+    ]
+  },
+  {
+    id: 'tpl_handhaving', naam: 'Handhavingscontrole',
+    zaaktype: '', soort: 'Handhavingscontrole',
+    onderwerpen: [
+      { naam: 'Strijdigheid met vergunning', beschrijving: 'Stel vast op welke punten de situatie afwijkt van de verleende vergunning.', bblArtikel: '' },
+      { naam: 'Bouwveiligheid omgeving', beschrijving: 'Controleer of de situatie gevaar oplevert voor derden.', bblArtikel: '4.1' },
+      { naam: 'Mogelijkheid legalisatie', beschrijving: 'Beoordeel of legalisatie via vergunningverlening mogelijk is.', bblArtikel: '' },
+    ]
+  },
+];
+
+function getSjablonen() {
+  try {
+    const raw = storage.getItem('vth_sjablonen');
+    if (!raw) return JSON.parse(JSON.stringify(STANDAARD_SJABLONEN));
+    return JSON.parse(raw);
+  } catch(e) { return JSON.parse(JSON.stringify(STANDAARD_SJABLONEN)); }
+}
+
+function saveSjablonen(sjablonen) {
+  storage.setItem('vth_sjablonen', JSON.stringify(sjablonen));
+}
+
+// --- Sjabloon kiezen bij controle ---
+function openSjabloonKiezer() {
+  const sjablonen = getSjablonen();
+  const lijst = document.getElementById('sjabloonKiezerLijst');
+  if (sjablonen.length === 0) {
+    lijst.innerHTML = '<p style="color:var(--text-secondary); font-size:13px;">Geen sjablonen beschikbaar. Maak er aan via Instellingen → Sjablonen.</p>';
+  } else {
+    lijst.innerHTML = sjablonen.map(s => `
+      <div onclick="pasSjabloonToe('${s.id}')"
+        style="padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius-sm);
+               margin-bottom:8px; cursor:pointer; background:var(--surface);"
+        onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary);">📋 ${escapeHtml(s.naam)}</div>
+        <div style="font-size:12px; color:var(--text-secondary); margin-top:3px;">
+          ${[s.zaaktype, s.soort].filter(Boolean).join(' · ')}
+          — ${s.onderwerpen.length} onderwerp${s.onderwerpen.length !== 1 ? 'en' : ''}
+        </div>
+      </div>`).join('');
+  }
+  document.getElementById('sjabloonKiezerModal').style.display = 'flex';
+}
+
+function sluitSjabloonKiezer() {
+  document.getElementById('sjabloonKiezerModal').style.display = 'none';
+}
+
+function pasSjabloonToe(sjabloonId) {
+  const sjablonen = getSjablonen();
+  const s = sjablonen.find(x => x.id === sjabloonId);
+  if (!s) return;
+  const nieuweOnderwerpen = s.onderwerpen.map(o => ({
+    naam: o.naam, beschrijving: o.beschrijving || '',
+    bblArtikel: o.bblArtikel || '', resultaat: '', afwijking: '',
+    voorschriftResultaten: {}
+  }));
+  tempOnderwerpen = [...tempOnderwerpen, ...nieuweOnderwerpen];
+  renderOnderwerpCards();
+  sluitSjabloonKiezer();
+  showToast(nieuweOnderwerpen.length + ' onderwerpen toegevoegd uit sjabloon');
+}
+
+// --- Sjablonen beheren (in Settings) ---
+function openSjabloonBeheer() {
+  renderSjabloonBeheerLijst();
+  document.getElementById('sjabloonBeheerModal').style.display = 'flex';
+}
+
+function sluitSjabloonBeheer() {
+  document.getElementById('sjabloonBeheerModal').style.display = 'none';
+}
+
+function renderSjabloonBeheerLijst() {
+  const sjablonen = getSjablonen();
+  const el = document.getElementById('sjabloonBeheerLijst');
+  if (sjablonen.length === 0) {
+    el.innerHTML = '<p style="color:var(--text-secondary); font-size:13px; margin-bottom:12px;">Nog geen sjablonen.</p>';
+    return;
+  }
+  el.innerHTML = sjablonen.map((s, i) => `
+    <div style="padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; background:var(--surface);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+        <div>
+          <div style="font-weight:600; font-size:14px;">📋 ${escapeHtml(s.naam)}</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:3px;">
+            ${[s.zaaktype, s.soort].filter(Boolean).join(' · ')} — ${s.onderwerpen.length} onderwerp${s.onderwerpen.length !== 1 ? 'en' : ''}
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <button class="btn btn-secondary" style="font-size:12px; padding:5px 10px;" onclick="openSjabloonForm('${s.id}')">Bewerken</button>
+          <button class="btn btn-danger" style="font-size:12px; padding:5px 10px;" onclick="verwijderSjabloon('${s.id}')">Verwijderen</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function verwijderSjabloon(id) {
+  if (!confirm('Sjabloon verwijderen?')) return;
+  const sjablonen = getSjablonen().filter(s => s.id !== id);
+  saveSjablonen(sjablonen);
+  renderSjabloonBeheerLijst();
+}
+
+// --- Sjabloon aanmaken/bewerken ---
+let sfOnderwerpen = [];
+let sfEditId = null;
+
+function openSjabloonForm(id) {
+  sfEditId = id;
+  const sjablonen = getSjablonen();
+  const s = id ? sjablonen.find(x => x.id === id) : null;
+  document.getElementById('sjabloonFormTitel').textContent = s ? 'Sjabloon bewerken' : 'Nieuw sjabloon';
+  document.getElementById('sf-naam').value = s ? s.naam : '';
+  document.getElementById('sf-zaaktype').value = s ? (s.zaaktype || '') : '';
+  document.getElementById('sf-soort').value = s ? (s.soort || '') : '';
+  sfOnderwerpen = s ? JSON.parse(JSON.stringify(s.onderwerpen)) : [];
+  renderSfOnderwerpen();
+  document.getElementById('sjabloonBeheerModal').style.display = 'none';
+  document.getElementById('sjabloonFormModal').style.display = 'flex';
+}
+
+function sluitSjabloonForm() {
+  document.getElementById('sjabloonFormModal').style.display = 'none';
+  document.getElementById('sjabloonBeheerModal').style.display = 'flex';
+}
+
+function renderSfOnderwerpen() {
+  const el = document.getElementById('sfOnderwerpLijst');
+  if (sfOnderwerpen.length === 0) {
+    el.innerHTML = '<p style="font-size:13px; color:var(--text-secondary);">Nog geen onderwerpen. Klik op "+ Toevoegen".</p>';
+    return;
+  }
+  el.innerHTML = sfOnderwerpen.map((o, i) => `
+    <div style="padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:6px; background:var(--surface);">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+        <div style="flex:1;">
+          <input type="text" value="${escapeHtml(o.naam)}" placeholder="Naam onderwerp *"
+            onchange="sfOnderwerpen[${i}].naam=this.value"
+            style="width:100%; font-size:13px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; box-sizing:border-box; margin-bottom:4px;">
+          <input type="text" value="${escapeHtml(o.beschrijving || '')}" placeholder="Beschrijving (optioneel)"
+            onchange="sfOnderwerpen[${i}].beschrijving=this.value"
+            style="width:100%; font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:4px; box-sizing:border-box; margin-bottom:4px; color:var(--text-secondary);">
+          <input type="text" value="${escapeHtml(o.bblArtikel || '')}" placeholder="BBL-artikel (bijv. 4.34)"
+            onchange="sfOnderwerpen[${i}].bblArtikel=this.value"
+            style="width:130px; font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:4px; color:var(--primary);">
+        </div>
+        <button onclick="sfVerwijderOnderwerp(${i})" style="background:none; border:none; cursor:pointer; font-size:18px; color:var(--text-secondary); padding:4px;">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function sfVoegOnderwerpToe() {
+  sfOnderwerpen.push({ naam: '', beschrijving: '', bblArtikel: '' });
+  renderSfOnderwerpen();
+  const el = document.getElementById('sfOnderwerpLijst');
+  const inputs = el.querySelectorAll('input[type="text"]');
+  if (inputs.length >= sfOnderwerpen.length * 3 - 2) inputs[inputs.length - 3]?.focus();
+}
+
+function sfVerwijderOnderwerp(i) {
+  sfOnderwerpen.splice(i, 1);
+  renderSfOnderwerpen();
+}
+
+function saveSjabloon() {
+  const naam = document.getElementById('sf-naam').value.trim();
+  if (!naam) { showToast('Vul een naam in voor het sjabloon'); return; }
+  const geldigeOnderwerpen = sfOnderwerpen.filter(o => o.naam.trim());
+  const sjabloon = {
+    id: sfEditId || ('tpl_' + Date.now()),
+    naam,
+    zaaktype: document.getElementById('sf-zaaktype').value,
+    soort: document.getElementById('sf-soort').value,
+    onderwerpen: geldigeOnderwerpen
+  };
+  const sjablonen = getSjablonen();
+  if (sfEditId) {
+    const idx = sjablonen.findIndex(s => s.id === sfEditId);
+    if (idx !== -1) sjablonen[idx] = sjabloon; else sjablonen.push(sjabloon);
+  } else {
+    sjablonen.push(sjabloon);
+  }
+  saveSjablonen(sjablonen);
+  sluitSjabloonForm();
+  renderSjabloonBeheerLijst();
+  showToast('Sjabloon opgeslagen');
 }
 
 // ===== XLS IMPORT =====
