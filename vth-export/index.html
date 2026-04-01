@@ -1228,6 +1228,11 @@ a { color: inherit; text-decoration: none; }
         <label>Standaard toezichthouder</label>
         <input type="text" id="set-toezichthouder" placeholder="Naam standaard toezichthouder">
       </div>
+      <div class="form-group">
+        <label>Ruimtelijke Plannen API-key <span style="font-size:12px; color:var(--text-secondary);">(bestemmingsplan op locatie)</span></label>
+        <input type="text" id="set-rp-apikey" placeholder="Plak hier uw Ruimtelijke Plannen API-key"
+          style="font-family:monospace; font-size:12px;" autocomplete="off">
+      </div>
       <button class="btn btn-primary btn-block" onclick="saveSettings()">Instellingen Opslaan</button>
     </div>
 
@@ -7221,6 +7226,7 @@ function loadSettings() {
   const s = getSettings();
   document.getElementById('set-gemeentenaam').value = s.gemeentenaam || '';
   document.getElementById('set-toezichthouder').value = s.toezichthouder || '';
+  document.getElementById('set-rp-apikey').value = s.rpApiKey || '';
   // Laad logo preview
   const logo = storage.getItem('vth_logo') || '';
   showLogoPreview(logo || null);
@@ -7230,6 +7236,7 @@ function saveSettings() {
   const data = {
     gemeentenaam: document.getElementById('set-gemeentenaam').value.trim(),
     toezichthouder: document.getElementById('set-toezichthouder').value.trim(),
+    rpApiKey: document.getElementById('set-rp-apikey').value.trim()
   };
   saveSettingsData(data);
   showToast('Instellingen opgeslagen');
@@ -7916,7 +7923,124 @@ function formatDate(dateStr) {
 function renderDsoPanel(p) {
   const panel = document.getElementById('dsoPanel');
   if (!panel) return;
-  panel.innerHTML = '';  // DSO directe integratie niet mogelijk via browser (CORS)
+  const apiKey = (getSettings().rpApiKey || '').trim();
+  if (!apiKey) { panel.innerHTML = ''; return; }
+  if (!p.lat || !p.lng) { panel.innerHTML = ''; return; }
+
+  if (p.rpData) {
+    panel.innerHTML = renderRpResultaat(p.rpData, p.rpDataDatum);
+    return;
+  }
+
+  panel.innerHTML = `
+    <div style="margin-top:8px; padding:14px 16px; background:#EEF7F7; border:1px solid var(--primary);
+                border-radius:var(--radius-sm); display:flex; align-items:center; gap:12px;">
+      <span style="font-size:22px;">🏛️</span>
+      <div style="flex:1;">
+        <div style="font-size:14px; font-weight:600; color:var(--primary);">Bestemmingsplan / Omgevingsplan</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Raadpleeg vigerende plannen voor deze locatie</div>
+      </div>
+      <button class="btn btn-primary" style="font-size:13px; white-space:nowrap;"
+        onclick="haalRuimtelijkePlannenOp('${p.id}')">Ophalen</button>
+    </div>`;
+}
+
+async function haalRuimtelijkePlannenOp(projectId) {
+  const p = getProjects().find(x => x.id === projectId);
+  if (!p || !p.lat || !p.lng) return;
+  const apiKey = (getSettings().rpApiKey || '').trim();
+  if (!apiKey) { showToast('Geen API-key ingesteld'); return; }
+
+  const panel = document.getElementById('dsoPanel');
+  panel.innerHTML = `<div style="margin-top:8px; padding:14px; background:#EEF7F7; border:1px solid var(--primary);
+    border-radius:var(--radius-sm); font-size:13px; color:var(--primary);">⏳ Plannen ophalen...</div>`;
+
+  try {
+    const resp = await fetch(
+      'https://ruimte.omgevingswet.overheid.nl/ruimtelijke-plannen/api/opvragen/v4/plannen/_zoek',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+        body: JSON.stringify({
+          geometrie: { type: 'Point', coordinates: [p.lng, p.lat] }
+        })
+      }
+    );
+
+    if (resp.status === 401 || resp.status === 403) {
+      panel.innerHTML = rpFoutMelding('API-key ongeldig of verlopen. Controleer uw key in Instellingen.');
+      return;
+    }
+    if (!resp.ok) {
+      panel.innerHTML = rpFoutMelding(`Fout van de server (${resp.status}). Probeer opnieuw.`);
+      return;
+    }
+
+    const json = await resp.json();
+    const plannen = json._embedded?.plannen || json.plannen || [];
+
+    if (plannen.length === 0) {
+      panel.innerHTML = rpFoutMelding('Geen plannen gevonden voor deze locatie.');
+      return;
+    }
+
+    const data = {
+      plannen: plannen.map(pl => ({
+        naam: pl.naam || pl.planNaam || '—',
+        type: pl.typePlan || pl.type || '—',
+        status: pl.planStatus || pl.status || '—',
+        datum: pl.datum || pl.datumBeschikbaarStelling || '',
+        identificatie: pl.identificatie || '',
+        bevoegdGezag: pl.bevoegdGezag?.naam || pl.bevoegdGezag || '—'
+      }))
+    };
+
+    const projects = getProjects();
+    const idx = projects.findIndex(x => x.id === projectId);
+    if (idx !== -1) {
+      projects[idx].rpData = data;
+      projects[idx].rpDataDatum = new Date().toISOString();
+      saveProjects(projects);
+    }
+    panel.innerHTML = renderRpResultaat(data, new Date().toISOString());
+
+  } catch(e) {
+    panel.innerHTML = rpFoutMelding('Verbindingsfout: ' + e.message);
+  }
+}
+
+function renderRpResultaat(data, datum) {
+  const datumTekst = datum ? new Date(datum).toLocaleDateString('nl-NL',
+    {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+  return `
+    <div style="margin-top:8px; padding:14px 16px; background:#EEF7F7; border:1px solid var(--primary); border-radius:var(--radius-sm);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
+        <div style="font-size:14px; font-weight:600; color:var(--primary);">🏛️ Vigerende plannen</div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          ${datumTekst ? `<span style="font-size:11px; color:var(--text-secondary);">${datumTekst}</span>` : ''}
+          <button class="btn btn-secondary" style="font-size:11px; padding:4px 8px;"
+            onclick="haalRuimtelijkePlannenOp('${currentProjectId}')">↻ Verversen</button>
+        </div>
+      </div>
+      ${data.plannen.map(pl => `
+        <div style="padding:10px 12px; background:#fff; border-radius:4px; margin-bottom:6px; border:1px solid #C8E6E6;">
+          <div style="font-size:13px; font-weight:600; color:var(--text-primary);">${escapeHtml(pl.naam)}</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:3px; display:flex; flex-wrap:wrap; gap:8px;">
+            <span>📄 ${escapeHtml(pl.type)}</span>
+            <span>📌 ${escapeHtml(pl.status)}</span>
+            ${pl.bevoegdGezag !== '—' ? `<span>🏛 ${escapeHtml(pl.bevoegdGezag)}</span>` : ''}
+            ${pl.datum ? `<span>📅 ${pl.datum.slice(0,10).split('-').reverse().join('-')}</span>` : ''}
+          </div>
+        </div>`).join('')}
+      <div style="font-size:11px; color:var(--text-secondary); margin-top:8px;">
+        Opgeslagen bij dit project — offline beschikbaar. Bron: Ruimtelijke Plannen API (omgevingswet.overheid.nl).
+      </div>
+    </div>`;
+}
+
+function rpFoutMelding(tekst) {
+  return `<div style="margin-top:8px; padding:12px 14px; background:#FFF3E0; border:1px solid #FFB74D;
+    border-radius:var(--radius-sm); font-size:13px; color:#E65100;">⚠️ ${escapeHtml(tekst)}</div>`;
 }
 
 async function haalDsoPlanregelsOp(projectId) {
