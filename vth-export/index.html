@@ -8000,10 +8000,21 @@ async function haalRuimtelijkePlannenOp(projectId) {
       return;
     }
 
+    const lokaleTypes = ['bestemmingsplan', 'wijzigingsplan', 'uitwerkingsplan', 'inpassingsplan', 'beheersverordening', 'omgevingsplan'];
+    const vigerendeStatussen = ['vastgesteld', 'geconsolideerd', 'onherroepelijk'];
+
+    const gefilterd = plannen.filter(pl => {
+      const type = (pl.type || pl.planType || pl.typePlan || '').toLowerCase();
+      const status = (pl.planstatusInfo?.planstatus || pl.planStatus || pl.status || '').toLowerCase();
+      return lokaleTypes.some(t => type.includes(t)) && vigerendeStatussen.some(s => status.includes(s));
+    });
+
+    const bronPlannen = gefilterd.length > 0 ? gefilterd : plannen;
+
     const data = {
-      plannen: plannen.map(pl => ({
+      plannen: bronPlannen.map(pl => ({
         naam: pl.naam || '—',
-        type: pl.planType || pl.typePlan || '—',
+        type: pl.type || pl.planType || pl.typePlan || '—',
         status: pl.planstatusInfo?.planstatus || pl.planStatus || pl.status || '—',
         datum: pl.planstatusInfo?.datum || pl.datum || '',
         identificatie: pl.identificatie || '',
@@ -8038,16 +8049,21 @@ function renderRpResultaat(data, datum) {
             onclick="haalRuimtelijkePlannenOp('${currentProjectId}')">↻ Verversen</button>
         </div>
       </div>
-      ${data.plannen.map(pl => `
-        <div style="padding:10px 12px; background:#fff; border-radius:4px; margin-bottom:6px; border:1px solid #C8E6E6;">
-          <div style="font-size:13px; font-weight:600; color:var(--text-primary);">${escapeHtml(pl.naam)}</div>
+      ${data.plannen.map(pl => {
+        const rpUrl = pl.identificatie ? `https://www.ruimtelijkeplannen.nl/viewer/viewer?planidn=${encodeURIComponent(pl.identificatie)}` : '';
+        return `
+        <div onclick="${rpUrl ? `window.open('${rpUrl}','_blank')` : ''}" style="padding:10px 12px; background:#fff; border-radius:4px; margin-bottom:6px; border:1px solid #C8E6E6; ${rpUrl ? 'cursor:pointer;' : ''}">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <div style="font-size:13px; font-weight:600; color:var(--text-primary);">${escapeHtml(pl.naam)}</div>
+            ${rpUrl ? `<span style="font-size:11px; color:var(--primary); white-space:nowrap;">↗ bekijken</span>` : ''}
+          </div>
           <div style="font-size:12px; color:var(--text-secondary); margin-top:3px; display:flex; flex-wrap:wrap; gap:8px;">
             <span>📄 ${escapeHtml(pl.type)}</span>
             <span>📌 ${escapeHtml(pl.status)}</span>
             ${pl.bevoegdGezag !== '—' ? `<span>🏛 ${escapeHtml(pl.bevoegdGezag)}</span>` : ''}
             ${pl.datum ? `<span>📅 ${pl.datum.slice(0,10).split('-').reverse().join('-')}</span>` : ''}
           </div>
-        </div>`).join('')}
+        </div>`;}).join('')}
       <div style="font-size:11px; color:var(--text-secondary); margin-top:8px;">
         Opgeslagen bij dit project — offline beschikbaar. Bron: Ruimtelijke Plannen API (omgevingswet.overheid.nl).
       </div>
