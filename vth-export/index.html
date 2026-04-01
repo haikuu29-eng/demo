@@ -7957,87 +7957,57 @@ async function haalRuimtelijkePlannenOp(projectId) {
 
   try {
     const BASE = 'https://ruimte.omgevingswet.overheid.nl/ruimtelijke-plannen/api/opvragen/v4';
-    const hdrs = { 'Content-Type': 'application/json', 'x-api-key': apiKey };
 
-    // Formaten om te proberen (meest naar minst specifiek)
-    const pogingen = [
-      // 1. Aanbevolen formaat v4 met GeoJSON Point
-      { url: `${BASE}/plannen/_zoek`, body: {
-          geometrie: { type: 'Point', coordinates: [p.lng, p.lat] },
-          planStatussen: ['vastgesteld', 'vigerend']
-        }
-      },
-      // 2. Zonder planStatussen filter
-      { url: `${BASE}/plannen/_zoek`, body: {
-          geometrie: { type: 'Point', coordinates: [p.lng, p.lat] }
-        }
-      },
-      // 3. Met bbox rondom het punt (50m)
-      { url: `${BASE}/plannen/_zoek`, body: {
-          geometrie: {
-            type: 'Polygon',
-            coordinates: [[[p.lng-0.001, p.lat-0.001],[p.lng+0.001, p.lat-0.001],
-                           [p.lng+0.001, p.lat+0.001],[p.lng-0.001, p.lat+0.001],
-                           [p.lng-0.001, p.lat-0.001]]]
-          }
-        }
-      },
-      // 4. GeoJSON met CRS header
-      { url: `${BASE}/plannen/_zoek`, body: {
-          geometrie: { type: 'Point', coordinates: [p.lng, p.lat] }
-        },
-        extraHdrs: { 'Content-Crs': 'epsg:4326' }
-      },
-    ];
+    // Gebruik RD New (epsg:28992) als beschikbaar, anders ETRS89 (epsg:4258)
+    const gebruikRD = !!(p.rdX && p.rdY);
+    const coords = gebruikRD ? [p.rdX, p.rdY] : [p.lng, p.lat];
+    const crs = gebruikRD ? 'epsg:28992' : 'epsg:4258';
 
-    let resp = null;
-    let lastError = '';
-    for (const poging of pogingen) {
-      const h = poging.extraHdrs ? { ...hdrs, ...poging.extraHdrs } : hdrs;
-      resp = await fetch(poging.url, { method: 'POST', headers: h, body: JSON.stringify(poging.body) });
-      if (resp.ok) break;
+    const hdrs = {
+      'Content-Type': 'application/json',
+      'X-Api-Key': apiKey,
+      'Content-Crs': crs
+    };
+
+    const body = {
+      _geo: { intersects: { type: 'Point', coordinates: coords } },
+      planType: ['bestemmingsplan', 'wijzigingsplan', 'uitwerkingsplan', 'inpassingsplan', 'beheersverordening'],
+      status: ['vastgesteld', 'geconsolideerd']
+    };
+
+    const resp = await fetch(`${BASE}/plannen/_zoek?pageSize=50`, {
+      method: 'POST',
+      headers: hdrs,
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      let lastError = '';
+      if (resp.status === 401 || resp.status === 403) {
+        panel.innerHTML = rpFoutMelding('API-key ongeldig of verlopen. Controleer uw key in Instellingen.');
+        return;
+      }
       try { const err = await resp.json(); lastError = err.detail || err.message || err.title || JSON.stringify(err).slice(0,300); } catch(e) { lastError = `status ${resp.status}`; }
-      resp = null;
-    }
-
-    if (!resp) {
-      panel.innerHTML = rpFoutMelding(`API geeft geen resultaat. Technische details: ${lastError}`);
-      return;
-    }
-    if (resp.status === 401 || resp.status === 403) {
-      panel.innerHTML = rpFoutMelding('API-key ongeldig of verlopen. Controleer uw key in Instellingen.');
+      panel.innerHTML = rpFoutMelding(`Fout van de server (${resp.status}): ${lastError}`);
       return;
     }
 
     const json = await resp.json();
-    let plannen = json._embedded?.plannen || json.plannen || json.results || [];
+    const plannen = json._embedded?.plannen || json.plannen || json.results || [];
 
-    // Filter op vigerende/vastgestelde plannen van het juiste type
-    const vigerendFilter = ['vastgesteld', 'vigerend', 'onherroepelijk'];
-    const typeFilter = ['bestemmingsplan', 'wijzigingsplan', 'uitwerkingsplan', 'inpassingsplan', 'omgevingsplan', 'beheersverordening'];
-    let gefilterd = plannen.filter(pl => {
-      const status = (pl.planStatus || pl.status || '').toLowerCase();
-      const type = (pl.typePlan || pl.type || '').toLowerCase();
-      return vigerendFilter.some(v => status.includes(v)) && typeFilter.some(t => type.includes(t));
-    });
-
-    // Als filter niets oplevert, toon alles (voor debug)
-    if (gefilterd.length === 0 && plannen.length > 0) gefilterd = plannen;
-
-    if (gefilterd.length === 0) {
-      // Toon ruwe JSON voor diagnose
-      panel.innerHTML = rpFoutMelding('Geen vigerende bestemmingsplannen gevonden. API stuurde: ' + JSON.stringify(json).slice(0, 400));
+    if (plannen.length === 0) {
+      panel.innerHTML = rpFoutMelding('Geen vigerende plannen gevonden voor deze locatie.');
       return;
     }
 
     const data = {
-      plannen: gefilterd.map(pl => ({
-        naam: pl.naam || pl.planNaam || '—',
-        type: pl.typePlan || pl.type || '—',
-        status: pl.planStatus || pl.status || '—',
-        datum: pl.datum || pl.datumBeschikbaarStelling || '',
+      plannen: plannen.map(pl => ({
+        naam: pl.naam || '—',
+        type: pl.planType || pl.typePlan || '—',
+        status: pl.planstatusInfo?.planstatus || pl.planStatus || pl.status || '—',
+        datum: pl.planstatusInfo?.datum || pl.datum || '',
         identificatie: pl.identificatie || '',
-        bevoegdGezag: pl.bevoegdGezag?.naam || pl.bevoegdGezag || '—'
+        bevoegdGezag: pl.bevoegdGezag?.naam || (typeof pl.bevoegdGezag === 'string' ? pl.bevoegdGezag : '—')
       }))
     };
 
