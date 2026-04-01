@@ -7956,23 +7956,43 @@ async function haalRuimtelijkePlannenOp(projectId) {
     border-radius:var(--radius-sm); font-size:13px; color:var(--primary);">⏳ Plannen ophalen...</div>`;
 
   try {
-    const resp = await fetch(
-      'https://ruimte.omgevingswet.overheid.nl/ruimtelijke-plannen/api/opvragen/v4/plannen/_zoek',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-        body: JSON.stringify({
-          geometrie: { type: 'Point', coordinates: [p.lng, p.lat] }
-        })
-      }
-    );
+    // Probeer eerst GET met WKT parameter
+    const wkt = `POINT(${p.lng} ${p.lat})`;
+    const getUrl = `https://ruimte.omgevingswet.overheid.nl/ruimtelijke-plannen/api/opvragen/v4/plannen?geometrie=${encodeURIComponent(wkt)}&pageSize=20`;
+    let resp = await fetch(getUrl, { headers: { 'x-api-key': apiKey } });
+
+    // Fallback: POST met _geo intersects formaat
+    if (!resp.ok) {
+      resp = await fetch(
+        'https://ruimte.omgevingswet.overheid.nl/ruimtelijke-plannen/api/opvragen/v4/plannen/_zoek',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+          body: JSON.stringify({ _geo: { intersects: { type: 'Point', coordinates: [p.lng, p.lat] } } })
+        }
+      );
+    }
+
+    // Fallback 2: POST met locatie wrapper
+    if (!resp.ok) {
+      resp = await fetch(
+        'https://ruimte.omgevingswet.overheid.nl/ruimtelijke-plannen/api/opvragen/v4/plannen/_zoek',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+          body: JSON.stringify({ locatie: { geometrie: { type: 'Point', coordinates: [p.lng, p.lat] } } })
+        }
+      );
+    }
 
     if (resp.status === 401 || resp.status === 403) {
       panel.innerHTML = rpFoutMelding('API-key ongeldig of verlopen. Controleer uw key in Instellingen.');
       return;
     }
     if (!resp.ok) {
-      panel.innerHTML = rpFoutMelding(`Fout van de server (${resp.status}). Probeer opnieuw.`);
+      let detail = '';
+      try { const err = await resp.json(); detail = err.detail || err.message || err.title || JSON.stringify(err).slice(0,200); } catch(e) {}
+      panel.innerHTML = rpFoutMelding(`Server fout (${resp.status})${detail ? ': ' + detail : '. Probeer opnieuw.'}`);
       return;
     }
 
