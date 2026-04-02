@@ -369,53 +369,125 @@
 </div>
 
 <script>
-  // ── Mini bestemmingsplankaart ──────────────────────────────────────────────
-  // Fictieve locatie: Dorpstraat 14, Waalre (approx)
-  const LAT = 51.3935, LNG = 5.4620;
+  // ── IMRO standaard kleurenpalet ────────────────────────────────────────────
+  const IMRO_KLEUR = {
+    'Wonen':       { fill: '#FFFF00', hatch: '#C8C800', border: '#000' },
+    'Gemengd':     { fill: '#FFAAAA', hatch: '#CC6666', border: '#000' },
+    'Tuin':        { fill: '#AACC66', hatch: '#6E9933', border: '#000' },
+    'Groen':       { fill: '#88CC44', hatch: '#558822', border: '#000' },
+    'Verkeer':     { fill: '#C8C8C8', hatch: '#888',    border: '#000' },
+    'Bedrijf':     { fill: '#AAAAFF', hatch: '#5555CC', border: '#000' },
+  };
 
+  // ── Voorbeeld bestemmingsvlakken rondom Waalre (illustratief) ─────────────
+  // In de echte app: ophalen via GET /plannen/{id}/bestemmingsvlakken?expand=geometrie
+  const LAT = 51.3935, LNG = 5.4618;
+
+  const ZONES = [
+    { naam: 'Wonen - 3',                groep: 'Wonen',   actief: true,
+      poly: [[51.3950,5.4598],[51.3950,5.4615],[51.3944,5.4618],[51.3944,5.4625],
+             [51.3948,5.4635],[51.3942,5.4640],[51.3933,5.4631],[51.3930,5.4618],
+             [51.3932,5.4607],[51.3944,5.4607]] },
+
+    { naam: 'Gemengd - 1',              groep: 'Gemengd',
+      poly: [[51.3950,5.4615],[51.3958,5.4615],[51.3958,5.4640],[51.3948,5.4635],
+             [51.3944,5.4625],[51.3944,5.4618]] },
+
+    { naam: 'Gemengd - 2',              groep: 'Gemengd',
+      poly: [[51.3921,5.4598],[51.3932,5.4607],[51.3930,5.4618],[51.3921,5.4625]] },
+
+    { naam: 'Tuin',                     groep: 'Tuin',
+      poly: [[51.3930,5.4618],[51.3933,5.4631],[51.3925,5.4638],[51.3919,5.4628],
+             [51.3921,5.4625]] },
+
+    { naam: 'Groen',                    groep: 'Groen',
+      poly: [[51.3942,5.4640],[51.3948,5.4635],[51.3958,5.4640],[51.3958,5.4650],
+             [51.3935,5.4650],[51.3925,5.4638],[51.3933,5.4631]] },
+
+    { naam: 'Verkeer - Verblijfsgebied', groep: 'Verkeer',
+      poly: [[51.3944,5.4598],[51.3950,5.4598],[51.3950,5.4607],
+             [51.3944,5.4607]] },
+
+    { naam: 'Verkeer - Verblijfsgebied', groep: 'Verkeer',
+      poly: [[51.3919,5.4598],[51.3921,5.4598],[51.3921,5.4625],
+             [51.3919,5.4628]] },
+  ];
+
+  // Bouwvlak (gestippelde omlijning binnen de Wonen-bestemming)
+  const BOUWVLAK = [[51.3936,5.4609],[51.3941,5.4609],[51.3941,5.4626],[51.3936,5.4626]];
+
+  // ── Leaflet kaart initialiseren ────────────────────────────────────────────
   const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: true })
     .setView([LAT, LNG], 18);
 
-  // 1. Neutrale achtergrond zonder labels (anders rommel onder het plan)
-  L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png', {
-    attribution: 'Achtergrondkaart © PDOK/Kadaster',
-    maxZoom: 20
+  // Neutrale lichte achtergrond
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OSM © CARTO', subdomains: 'abcd', maxZoom: 20, opacity: 0.4
   }).addTo(miniMap);
 
-  // 2. Officiële bestemmingsplan WMS — zelfde bron als ruimtelijkeplannen.nl
-  //    Laagvolgorde: eerst vlakken, dan aanduidingen, dan maatvoeringen bovenop
-  L.tileLayer.wms('https://geodata.nationaalgeoregister.nl/ruimtelijkeplannen/wms', {
-    layers: [
-      'enkelbestemming',
-      'dubbelbestemming',
-      'gebiedsaanduiding',
-      'bouwvlak',
-      'functieaanduiding',
-      'bouwaanduiding',
-      'maatvoering',
-      'figuur'
-    ].join(','),
-    format: 'image/png',
-    transparent: true,
-    opacity: 1.0,
-    version: '1.1.1',
-    attribution: 'Ruimtelijke Plannen © PDOK'
-  }).addTo(miniMap);
+  // ── SVG arceringspatronen injecteren (IMRO + arcering) ─────────────────────
+  function injectPatterns() {
+    const svg = miniMap.getPane('overlayPane').querySelector('svg');
+    if (!svg) { setTimeout(injectPatterns, 80); return; }
 
-  // 3. Labels (huisnrs, straatnamen) bovenop het bestemmingsplan
-  L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png', {
-    opacity: 0, maxZoom: 20  // placeholder — labels komen uit de WMS-stijl zelf
-  });
+    let defs = svg.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svg.insertBefore(defs, svg.firstChild);
+    }
 
-  // Locatie-pin
-  const pin = L.divIcon({
-    html: `<div style="width:16px;height:16px;background:#C4622D;border:3px solid #fff;
-                border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>`,
-    className: '', iconSize: [16, 16], iconAnchor: [8, 8]
-  });
-  L.marker([LAT, LNG], { icon: pin }).addTo(miniMap);
+    Object.entries(IMRO_KLEUR).forEach(([naam, k]) => {
+      const id = 'pat-' + naam.toLowerCase();
+      if (defs.querySelector('#' + id)) return;
+      defs.innerHTML += `
+        <pattern id="${id}" patternUnits="userSpaceOnUse" width="12" height="12">
+          <rect width="12" height="12" fill="${k.fill}"/>
+          <text x="2.5" y="9.5" font-size="9" font-family="monospace"
+                fill="${k.hatch}" opacity="0.75">+</text>
+        </pattern>`;
+    });
+    tekenenOpKaart();
+  }
 
-  // Zoom knoppen rechtsonder
+  function tekenenOpKaart() {
+    // Bestemmingsvlakken
+    ZONES.forEach(z => {
+      const k = IMRO_KLEUR[z.groep] || IMRO_KLEUR['Wonen'];
+      const opts = {
+        fillColor: `url(#pat-${z.groep.toLowerCase()})`,
+        fillOpacity: 1,
+        color: '#222',
+        weight: z.actief ? 3 : 1.5,
+        dashArray: null
+      };
+      const p = L.polygon(z.poly, opts).addTo(miniMap);
+      p.bindTooltip(`<b>${z.naam}</b><br><small>${z.groep}</small>`,
+        { sticky: true, className: 'bp-tooltip' });
+
+      // Highlight active zone
+      if (z.actief) {
+        p.setStyle({ color: '#C4622D', weight: 3 });
+      }
+    });
+
+    // Bouwvlak (dik gestippeld zwart)
+    L.polygon(BOUWVLAK, {
+      fillOpacity: 0, color: '#000', weight: 3, dashArray: '6 4'
+    }).addTo(miniMap).bindTooltip('Bouwvlak', { sticky: true });
+
+    // Locatie-pin
+    const pin = L.divIcon({
+      html: `<div style="width:18px;height:18px;background:#C4622D;border:3px solid #fff;
+                  border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
+      className: '', iconSize: [18, 18], iconAnchor: [9, 9]
+    });
+    L.marker([LAT, LNG], { icon: pin }).addTo(miniMap);
+  }
+
+  // Trigger na korte delay zodat Leaflet de SVG-overlay heeft aangemaakt
+  miniMap.on('load', () => setTimeout(injectPatterns, 50));
+  setTimeout(injectPatterns, 200);
+
   L.control.zoom({ position: 'bottomright' }).addTo(miniMap);
 
   // ── Toggle plan ────────────────────────────────────────────────────────────
@@ -425,7 +497,7 @@
     document.getElementById('planBody').style.display = planOpen ? '' : 'none';
     document.getElementById('miniMap').style.display = planOpen ? '' : 'none';
     document.getElementById('chev').className = 'chevron ' + (planOpen ? 'open' : '');
-    if (planOpen) miniMap.invalidateSize();
+    if (planOpen) { miniMap.invalidateSize(); setTimeout(injectPatterns, 100); }
   }
 
   let tekstOpen = false;
@@ -435,5 +507,9 @@
     document.getElementById('tekstChev').textContent = tekstOpen ? '▲' : '▼';
   }
 </script>
+
+<style>
+  .bp-tooltip { font-size: 12px; }
+</style>
 </body>
 </html>
