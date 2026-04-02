@@ -185,337 +185,427 @@
 </head>
 <body>
 
-<p style="font-size:11px; color:#999; margin-bottom:16px; text-align:center;">
-  🎨 Mockup — zo ziet de feature eruit in de app
+<p style="font-size:11px; color:#999; margin-bottom:12px; text-align:center;">
+  Live voorbeeld — echte data via PDOK + Ruimtelijke Plannen API
 </p>
 
-<div class="note">
-  📍 <strong>Dorpstraat 14, Waalre</strong> — Bestemmingsplan Waalre e.o. 2013
-</div>
-
-<!-- ── PLAN KAART MET UITKLAP ── -->
-<h3>Vigerende plannen</h3>
-
-<div class="card">
-
-  <!-- Plan header (zoals nu al bestaat) -->
-  <div class="plan-header" onclick="togglePlan()">
-    <div>
-      <div class="plan-naam">Bestemmingsplan Waalre e.o. 2013</div>
-      <div class="plan-meta">
-        <span>📄 bestemmingsplan</span>
-        <span class="badge badge-green">✓ vastgesteld</span>
-        <span>📅 15-06-2013</span>
-        <span>🏛 Gemeente Waalre</span>
-      </div>
-    </div>
-    <span class="chevron open" id="chev">▼</span>
-  </div>
-
-  <!-- Mini bestemmingsplankaart -->
-  <div id="miniMap" class="mini-map"></div>
-
-  <!-- Planregels body -->
-  <div class="planregels-body" id="planBody">
-
-    <!-- 1. BESTEMMING -->
-    <div class="section">
-      <div class="section-label">Bestemming</div>
-      <div class="bestemming-row">
-        <div class="bestemming-icon">🏠</div>
-        <div>
-          <div class="bestemming-naam">Wonen</div>
-          <div class="bestemming-type">Enkelbestemming</div>
-        </div>
-        <div class="bestemming-artikel">Art. 12</div>
-      </div>
-    </div>
-
-    <!-- 2. MAATVOERINGEN -->
-    <div class="section">
-      <div class="section-label">Maatvoeringen</div>
-      <div class="maatvoering-grid">
-        <div class="mv-item">
-          <div class="mv-waarde">9 m</div>
-          <div class="mv-naam">Max. bouwhoogte</div>
-        </div>
-        <div class="mv-item">
-          <div class="mv-waarde">6 m</div>
-          <div class="mv-naam">Max. goothoogte</div>
-        </div>
-        <div class="mv-item">
-          <div class="mv-waarde">50%</div>
-          <div class="mv-naam">Bebouwingspercentage</div>
-        </div>
-        <div class="mv-item">
-          <div class="mv-waarde">2</div>
-          <div class="mv-naam">Max. bouwlagen</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. BOUWVLAK + AANDUIDINGEN -->
-    <div class="section">
-      <div class="section-label">Aanduidingen</div>
-      <div class="aanduiding-list">
-        <span class="aanduiding-chip chip-green">🟩 Bouwvlak aanwezig</span>
-        <span class="aanduiding-chip chip-orange">🔶 aanduidingen: "tuin"</span>
-        <span class="aanduiding-chip chip-gray">📐 Bouwperceelgrens</span>
-      </div>
-    </div>
-
-    <!-- 4. GEBIEDSAANDUIDINGEN -->
-    <div class="section">
-      <div class="section-label">Gebiedsaanduidingen</div>
-      <div class="aanduiding-list">
-        <span class="aanduiding-chip chip-red">⚠️ Geluidzone industrie</span>
-        <span class="aanduiding-chip chip-gray">🔵 Wro-zone — wijzigingsgebied</span>
-      </div>
-    </div>
-
-    <!-- 5. PLANREGELTEKST (uitklapbaar) -->
-    <button class="tekst-toggle" onclick="toggleTekst()">
-      📖 Artikel 12 — Wonen (planregeltekst)
-      <span id="tekstChev">▼</span>
+<!-- API key invoer -->
+<div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; margin-bottom:12px;">
+  <div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Ruimtelijke Plannen API-key</div>
+  <div style="display:flex; gap:8px;">
+    <input id="rpKeyInput" type="password" placeholder="Vul je API-key in..."
+      style="flex:1; padding:7px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; outline:none;"
+      oninput="document.getElementById('laadBtn').disabled=!this.value.trim()">
+    <button id="laadBtn" onclick="laadBlokvenlaan()" disabled
+      style="padding:7px 14px; background:var(--primary); color:#fff; border:none; border-radius:6px; font-size:13px; cursor:pointer; white-space:nowrap;">
+      Laden
     </button>
-    <div class="tekst-inhoud" id="tekstBody">
-      <h4>12.1 Bestemmingsomschrijving</h4>
-      <p>De voor <strong>Wonen</strong> aangewezen gronden zijn bestemd voor:</p>
-      <p>a. wonen, al dan niet in combinatie met een aan-huis-verbonden beroep of kleinschalige bedrijfsmatige activiteiten;</p>
-      <p>b. tuinen en erven.</p>
+  </div>
+  <div id="laadStatus" style="font-size:11px; color:var(--text-secondary); margin-top:5px;"></div>
+</div>
 
-      <h4>12.2 Bouwregels</h4>
-      <p><em>12.2.1 Hoofdgebouwen</em></p>
-      <table>
-        <tr><th>Maat</th><th>Waarde</th></tr>
-        <tr><td>Maximale bouwhoogte</td><td>9 meter</td></tr>
-        <tr><td>Maximale goothoogte</td><td>6 meter</td></tr>
-        <tr><td>Maximale bouwdiepte</td><td>15 meter</td></tr>
-        <tr><td>Bebouwingspercentage perceel</td><td>50%</td></tr>
-      </table>
+<div id="locatieBadge" class="note" style="display:none;"></div>
 
-      <p><em>12.2.2 Bijgebouwen en overkappingen</em></p>
-      <p>De bouwhoogte van bijgebouwen en overkappingen bedraagt ten hoogste 3,5 meter; de oppervlakte bedraagt ten hoogste 75 m².</p>
-
-      <h4>12.3 Afwijken van de bouwregels</h4>
-      <p>Het bevoegd gezag kan afwijking verlenen voor het bouwen van hoofdgebouwen tot een bouwhoogte van maximaal 11 meter, mits de stedenbouwkundige situatie dit toelaat.</p>
-    </div>
-
-    <div class="footer-note">
-      ℹ️ Data: Ruimtelijke Plannen API · gecached 01-04-2026
-    </div>
+<h3>Vigerende plannen — Blokvenlaan 23, Waalre</h3>
+<div id="resultaatContainer">
+  <div style="padding:24px; text-align:center; color:var(--text-secondary); font-size:13px;">
+    Voer je API-key in en klik op Laden
   </div>
 </div>
 
-<!-- ── VOORBEELD: MAATVOERING ONTBREEKT ── -->
-<h3 style="margin-top:8px;">Voorbeeld: maatvoering niet gedigitaliseerd</h3>
-<div class="card" style="opacity:.85;">
-  <div class="plan-header">
-    <div>
-      <div class="plan-naam">Bestemmingsplan Buitengebied 2019</div>
-      <div class="plan-meta">
-        <span>📄 bestemmingsplan</span>
-        <span class="badge badge-green">✓ vastgesteld</span>
-      </div>
-    </div>
-  </div>
-  <div class="planregels-body">
-    <div class="section">
-      <div class="section-label">Bestemming</div>
-      <div class="bestemming-row">
-        <div class="bestemming-icon">🌿</div>
-        <div>
-          <div class="bestemming-naam">Agrarisch</div>
-          <div class="bestemming-type">Enkelbestemming</div>
-        </div>
-        <div class="bestemming-artikel">Art. 3</div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-label">Maatvoeringen</div>
-      <div style="display:flex; align-items:center; gap:8px; padding:6px 0;
-                  font-size:12px; color:#E65100; background:#FFF3E0;
-                  border-radius:6px; padding:8px 10px;">
-        ⚠️ Maatvoeringen niet digitaal beschikbaar — zie planregeltekst
-      </div>
-    </div>
-    <button class="tekst-toggle">
-      📖 Artikel 3 — Agrarisch (planregeltekst) ▼
-    </button>
-    <div class="footer-note">ℹ️ Data: Ruimtelijke Plannen API · gecached 01-04-2026</div>
-  </div>
-</div>
-
-<!-- ── VOORBEELD: LOADING STATE ── -->
-<h3 style="margin-top:8px;">Laadstatus tijdens ophalen</h3>
-<div class="card">
-  <div class="plan-header">
-    <div>
-      <div class="plan-naam">Bestemmingsplan Waalre e.o. 2013</div>
-      <div class="plan-meta">
-        <span class="badge badge-green">✓ vastgesteld</span>
-      </div>
-    </div>
-    <span style="font-size:12px; color:var(--primary);">⏳ ophalen…</span>
-  </div>
-  <div class="planregels-body">
-    <div class="section">
-      <div class="loading-pulse"></div>
-    </div>
-    <div class="section" style="padding-top:8px;">
-      <div class="loading-pulse" style="height:40px;"></div>
-    </div>
-  </div>
-</div>
+<!-- ── PLAN KAART TEMPLATE (verborgen, kloon in JS) ── -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
 
 <script>
-  // ── IMRO standaard kleurenpalet ────────────────────────────────────────────
-  const IMRO_KLEUR = {
-    'Wonen':       { fill: '#FFFF00', hatch: '#C8C800', border: '#000' },
-    'Gemengd':     { fill: '#FFAAAA', hatch: '#CC6666', border: '#000' },
-    'Tuin':        { fill: '#AACC66', hatch: '#6E9933', border: '#000' },
-    'Groen':       { fill: '#88CC44', hatch: '#558822', border: '#000' },
-    'Verkeer':     { fill: '#C8C8C8', hatch: '#888',    border: '#000' },
-    'Bedrijf':     { fill: '#AAAAFF', hatch: '#5555CC', border: '#000' },
-  };
+// ═══════════════════════════════════════════════════════════════════
+//  LIVE MOCKUP — Blokvenlaan 23, Waalre
+//  Roept echte APIs aan: PDOK geocoding + Ruimtelijke Plannen v4
+// ═══════════════════════════════════════════════════════════════════
 
-  // ── Voorbeeld bestemmingsvlakken rondom Waalre (illustratief) ─────────────
-  // In de echte app: ophalen via GET /plannen/{id}/bestemmingsvlakken?expand=geometrie
-  const LAT = 51.3935, LNG = 5.4618;
+const IMRO = {
+  'wonen':          { fill: '#FFFF00', hatch: '#C8C800' },
+  'gemengd':        { fill: '#FFAAAA', hatch: '#CC6666' },
+  'tuin':           { fill: '#AACC66', hatch: '#6E9933' },
+  'groen':          { fill: '#88CC44', hatch: '#558822' },
+  'verkeer':        { fill: '#C8C8C8', hatch: '#888888' },
+  'bedrijf':        { fill: '#AAAAFF', hatch: '#5555CC' },
+  'agrarisch':      { fill: '#FFD080', hatch: '#B89040' },
+  'natuur':         { fill: '#80DD80', hatch: '#408040' },
+  'water':          { fill: '#80CCFF', hatch: '#4488CC' },
+  'maatschappelijk':{ fill: '#FFCC88', hatch: '#BB8833' },
+  'sport':          { fill: '#88FFFF', hatch: '#44AAAA' },
+  'recreatie':      { fill: '#FF9966', hatch: '#CC5522' },
+  'centrum':        { fill: '#FF8080', hatch: '#CC3333' },
+  'detailhandel':   { fill: '#FF8800', hatch: '#CC5500' },
+};
 
-  const ZONES = [
-    { naam: 'Wonen - 3',                groep: 'Wonen',   actief: true,
-      poly: [[51.3950,5.4598],[51.3950,5.4615],[51.3944,5.4618],[51.3944,5.4625],
-             [51.3948,5.4635],[51.3942,5.4640],[51.3933,5.4631],[51.3930,5.4618],
-             [51.3932,5.4607],[51.3944,5.4607]] },
+function imroKleur(groep) {
+  const key = (groep || '').toLowerCase().split(/[\s-]/)[0];
+  return IMRO[key] || { fill: '#DDDDDD', hatch: '#999999' };
+}
 
-    { naam: 'Gemengd - 1',              groep: 'Gemengd',
-      poly: [[51.3950,5.4615],[51.3958,5.4615],[51.3958,5.4640],[51.3948,5.4635],
-             [51.3944,5.4625],[51.3944,5.4618]] },
+const BASE_RP = 'https://ruimte.omgevingswet.overheid.nl/ruimtelijke-plannen/api/opvragen/v4';
+let miniMap = null, polygonLagen = [], pinMarker = null;
 
-    { naam: 'Gemengd - 2',              groep: 'Gemengd',
-      poly: [[51.3921,5.4598],[51.3932,5.4607],[51.3930,5.4618],[51.3921,5.4625]] },
+function status(tekst, kleur) {
+  const el = document.getElementById('laadStatus');
+  if (el) { el.textContent = tekst; el.style.color = kleur || '#666'; }
+}
 
-    { naam: 'Tuin',                     groep: 'Tuin',
-      poly: [[51.3930,5.4618],[51.3933,5.4631],[51.3925,5.4638],[51.3919,5.4628],
-             [51.3921,5.4625]] },
+// ── Punt-in-polygoon (ray casting) ────────────────────────────────
+function puntInPolygoon(lat, lng, coords) {
+  // coords: GeoJSON [[lng,lat], ...] of Leaflet [[lat,lng], ...]
+  // detecteer formaat
+  let ring = coords;
+  if (coords[0] && coords[0].length === 2) {
+    // bepaal of het [lng,lat] of [lat,lng] is
+    ring = coords;
+  }
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > lat) !== (yj > lat)) &&
+      (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
 
-    { naam: 'Groen',                    groep: 'Groen',
-      poly: [[51.3942,5.4640],[51.3948,5.4635],[51.3958,5.4640],[51.3958,5.4650],
-             [51.3935,5.4650],[51.3925,5.4638],[51.3933,5.4631]] },
+function puntInGeoJsonPolygoon(lat, lng, geometry) {
+  if (!geometry || geometry.type !== 'Polygon') return false;
+  const ring = geometry.coordinates[0]; // outer ring: [[lng,lat],...]
+  // GeoJSON uses [lng, lat]
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j]; // xi=lng, yi=lat
+    const intersect = ((yi > lat) !== (yj > lat)) &&
+      (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
 
-    { naam: 'Verkeer - Verblijfsgebied', groep: 'Verkeer',
-      poly: [[51.3944,5.4598],[51.3950,5.4598],[51.3950,5.4607],
-             [51.3944,5.4607]] },
+// ── Maatvoeringen normaliseren ─────────────────────────────────────
+const MAATVOERING_ALIASSEN = {
+  'max. bouwhoogte':    'bouwhoogte', 'maximale bouwhoogte': 'bouwhoogte',
+  'bouwhoogte':         'bouwhoogte', 'max bouwhoogte':      'bouwhoogte',
+  'max. goothoogte':    'goothoogte', 'maximale goothoogte': 'goothoogte',
+  'goothoogte':         'goothoogte', 'max goothoogte':      'goothoogte',
+  'bebouwingspercentage': 'bebouwing%', 'maximum bebouwingspercentage': 'bebouwing%',
+  'bebouwings%':        'bebouwing%', 'max. bebouwingspercentage': 'bebouwing%',
+  'bouwlagen':          'bouwlagen',  'max. bouwlagen': 'bouwlagen',
+  'maximum aantal bouwlagen': 'bouwlagen', 'aantal bouwlagen': 'bouwlagen',
+  'vloeroppervlakte':   'vloeroppervlak', 'bruto vloeroppervlak': 'vloeroppervlak',
+  'maximum bruto vloeroppervlak': 'vloeroppervlak',
+};
+const MAATVOERING_LABELS = {
+  'bouwhoogte':    'Max. bouwhoogte',
+  'goothoogte':    'Max. goothoogte',
+  'bebouwing%':    'Bebouwingsperc.',
+  'bouwlagen':     'Max. bouwlagen',
+  'vloeroppervlak':'Max. vloeropp.',
+};
+function normaliseerMaat(naam) {
+  return MAATVOERING_ALIASSEN[(naam||'').toLowerCase().trim()] || null;
+}
 
-    { naam: 'Verkeer - Verblijfsgebied', groep: 'Verkeer',
-      poly: [[51.3919,5.4598],[51.3921,5.4598],[51.3921,5.4625],
-             [51.3919,5.4628]] },
-  ];
+// ── SVG arceringspatronen injecteren ──────────────────────────────
+function injectPatterns(kaart, polyLagen) {
+  const pane = kaart.getPane('overlayPane');
+  const svg = pane && pane.querySelector('svg');
+  if (!svg) { setTimeout(() => injectPatterns(kaart, polyLagen), 80); return; }
+  let defs = svg.querySelector('defs');
+  if (!defs) {
+    defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    svg.insertBefore(defs, svg.firstChild);
+  }
+  Object.entries(IMRO).forEach(([naam, k]) => {
+    const id = 'pat-' + naam;
+    if (svg.querySelector('#' + id)) return;
+    const pat = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+    pat.setAttribute('id', id);
+    pat.setAttribute('patternUnits', 'userSpaceOnUse');
+    pat.setAttribute('width', '12'); pat.setAttribute('height', '12');
+    pat.innerHTML = `<rect width="12" height="12" fill="${k.fill}"/>
+      <text x="2" y="9.5" font-size="9" font-family="monospace" fill="${k.hatch}" opacity="0.7">+</text>`;
+    defs.appendChild(pat);
+  });
+  polyLagen.forEach(({ poly, groep }) => {
+    const key = (groep||'').toLowerCase().split(/[\s-]/)[0];
+    const id = 'pat-' + key;
+    if (IMRO[key] && svg.querySelector('#' + id)) {
+      poly.setStyle({ fillColor: `url(#${id})`, fillOpacity: 1 });
+    }
+  });
+}
 
-  // Bouwvlak (gestippelde omlijning binnen de Wonen-bestemming)
-  const BOUWVLAK = [[51.3936,5.4609],[51.3941,5.4609],[51.3941,5.4626],[51.3936,5.4626]];
-
-  // ── Leaflet kaart initialiseren ────────────────────────────────────────────
-  const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: true })
-    .setView([LAT, LNG], 18);
-
+// ── Kaart initialiseren of herschikken ────────────────────────────
+function initKaart(containerId) {
+  if (miniMap) { miniMap.remove(); miniMap = null; polygonLagen = []; }
+  miniMap = L.map(containerId, { zoomControl: false, attributionControl: true })
+    .setView([51.393, 5.462], 17);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OSM © CARTO', subdomains: 'abcd', maxZoom: 20, opacity: 0.5
   }).addTo(miniMap);
+  L.control.zoom({ position: 'bottomright' }).addTo(miniMap);
+  return miniMap;
+}
 
-  // ── Stap 1: zones tekenen met solid fill (dit triggert Leaflet SVG-aanmaak) ─
-  const polygonLaag = [];
-
-  ZONES.forEach(z => {
-    const k = IMRO_KLEUR[z.groep] || IMRO_KLEUR['Wonen'];
-    const poly = L.polygon(z.poly, {
-      fillColor: k.fill,
-      fillOpacity: 0.85,
-      color: z.actief ? '#C4622D' : '#333',
-      weight: z.actief ? 3 : 1.5
-    }).addTo(miniMap);
-    poly.bindTooltip(`<b>${z.naam}</b><br><small>${z.groep}</small>`,
+function toonVlakkenOpKaart(kaart, vlakken, lat, lng) {
+  polygonLagen = [];
+  vlakken.forEach(v => {
+    if (!v.geometrie || v.geometrie.type !== 'Polygon') return;
+    const k = imroKleur(v.bestemmingshoofdgroep || v.naam);
+    // GeoJSON coords [lng,lat] → Leaflet [lat,lng]
+    const latlngs = v.geometrie.coordinates[0].map(c => [c[1], c[0]]);
+    const actief = puntInGeoJsonPolygoon(lat, lng, v.geometrie);
+    const poly = L.polygon(latlngs, {
+      fillColor: k.fill, fillOpacity: 0.85,
+      color: actief ? '#C4622D' : '#333',
+      weight: actief ? 3 : 1.5
+    }).addTo(kaart);
+    poly.bindTooltip(`<b>${v.naam||'—'}</b><br><small>${v.bestemmingshoofdgroep||v.type||''}</small>`,
       { sticky: true, className: 'bp-tooltip' });
-    polygonLaag.push({ poly, z, k });
+    polygonLagen.push({ poly, groep: (v.bestemmingshoofdgroep||'') });
   });
-
-  L.polygon(BOUWVLAK, {
-    fillOpacity: 0, color: '#000', weight: 2.5, dashArray: '7 4'
-  }).addTo(miniMap).bindTooltip('Bouwvlak', { sticky: true });
-
+  // Locatie-pin
+  if (pinMarker) kaart.removeLayer(pinMarker);
   const pin = L.divIcon({
-    html: `<div style="width:18px;height:18px;background:#C4622D;border:3px solid #fff;
-                border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
-    className: '', iconSize: [18, 18], iconAnchor: [9, 9]
+    html: `<div style="width:16px;height:16px;background:#C4622D;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>`,
+    className:'', iconSize:[16,16], iconAnchor:[8,8]
   });
-  L.marker([LAT, LNG], { icon: pin }).addTo(miniMap);
+  pinMarker = L.marker([lat, lng], { icon: pin }).addTo(kaart);
+  kaart.setView([lat, lng], 18);
+  setTimeout(() => injectPatterns(kaart, polygonLagen), 300);
+}
 
-  // ── Stap 2: SVG-patronen injecteren NA aanmaak polygonen ──────────────────
-  //    Nu bestaat de SVG-overlay gegarandeerd
-  function injectPatterns() {
-    // Leaflet's vector SVG zit in de overlayPane (of een child-SVG)
-    const pane = miniMap.getPane('overlayPane');
-    const svg = pane && pane.querySelector('svg');
-    if (!svg) return; // polygonen zouden dit al getriggerd moeten hebben
+// ── Pagineer alle bestemmingsvlakken op (max 200) ─────────────────
+async function haalAlleBestemmingsvlakken(planId, apiKey, crs) {
+  const vlakken = [];
+  let url = `${BASE_RP}/plannen/${encodeURIComponent(planId)}/bestemmingsvlakken?expand=geometrie&pageSize=100`;
+  while (url) {
+    const r = await fetch(url, { headers: { 'X-Api-Key': apiKey, 'Accept-Crs': crs } });
+    if (!r.ok) break;
+    const j = await r.json();
+    (j._embedded?.bestemmingsvlakken || []).forEach(v => vlakken.push(v));
+    url = j._links?.next?.href || null;
+  }
+  return vlakken;
+}
 
-    // Voeg <defs> toe als die er nog niet is
-    let defs = svg.querySelector('defs');
-    if (!defs) {
-      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-      svg.insertBefore(defs, svg.firstChild);
+async function haalMaatvoeringen(planId, bestemmingsvlakId, apiKey, crs, lat, lng) {
+  // Probeer gefilterd op bestemmingsvlak; anders alle maatvoeringen + PiP
+  let url = `${BASE_RP}/plannen/${encodeURIComponent(planId)}/maatvoeringen?expand=geometrie&pageSize=100`;
+  if (bestemmingsvlakId) url += `&bestemmingsvlak=${encodeURIComponent(bestemmingsvlakId)}`;
+  const r = await fetch(url, { headers: { 'X-Api-Key': apiKey, 'Accept-Crs': crs } });
+  if (!r.ok) return [];
+  const j = await r.json();
+  let mvs = j._embedded?.maatvoeringen || [];
+  if (!bestemmingsvlakId) {
+    // filter op locatie via PiP
+    mvs = mvs.filter(mv => mv.geometrie && puntInGeoJsonPolygoon(lat, lng, mv.geometrie));
+  }
+  return mvs;
+}
+
+async function haalTekst(tekstId, apiKey) {
+  if (!tekstId) return null;
+  const url = `${BASE_RP}/teksten/${encodeURIComponent(tekstId)}`;
+  const r = await fetch(url, { headers: { 'X-Api-Key': apiKey } });
+  if (!r.ok) return null;
+  return await r.json();
+}
+
+// ── Planregels renderen in het DOM ────────────────────────────────
+function renderPlanregels(container, bestemming, bouwvlakAanwezig, maatvoeringen, tekst, datum) {
+  const k = imroKleur(bestemming?.bestemmingshoofdgroep || bestemming?.naam);
+  const groepNaam = bestemming?.bestemmingshoofdgroep || bestemming?.type || '—';
+  const artikelNr = bestemming?.artikelnummer || '—';
+
+  // Maatvoeringen samenvoegen
+  const maatMap = {};
+  maatvoeringen.forEach(mv => {
+    (mv.omvang || []).forEach(o => {
+      const norm = normaliseerMaat(o.naam);
+      if (norm && !maatMap[norm]) maatMap[norm] = { waarde: o.waarde, origineel: o.naam };
+    });
+  });
+
+  const maatHTML = Object.keys(MAATVOERING_LABELS).map(k => {
+    const v = maatMap[k];
+    return v
+      ? `<div class="mv-item"><div class="mv-waarde">${escH(v.waarde)}</div><div class="mv-naam">${MAATVOERING_LABELS[k]}</div></div>`
+      : `<div class="mv-item ontbreekt"><div class="mv-waarde" style="font-size:12px;color:#aaa">—</div><div class="mv-naam">${MAATVOERING_LABELS[k]}</div></div>`;
+  }).join('');
+
+  const heeftMaatvoering = Object.keys(maatMap).length > 0;
+  const tekstHTML = tekst?.inhoud
+    ? `<button class="tekst-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.tchev').textContent=this.nextElementSibling.classList.contains('open')?'▲':'▼'">
+         📖 Artikel ${escH(artikelNr)} — ${escH(bestemming?.naam||'')} <span class="tchev">▼</span>
+       </button>
+       <div class="tekst-inhoud">${tekst.inhoud}</div>`
+    : `<div class="footer-note">📄 Planregeltekst niet beschikbaar via API</div>`;
+
+  container.innerHTML = `
+    <div id="liveMap" class="mini-map"></div>
+    <div class="planregels-body">
+      <div class="section">
+        <div class="section-label">Bestemming</div>
+        <div class="bestemming-row">
+          <div class="bestemming-icon" style="background:${k.fill};color:#333">🏠</div>
+          <div>
+            <div class="bestemming-naam">${escH(bestemming?.naam||'—')}</div>
+            <div class="bestemming-type">${escH(groepNaam)}</div>
+          </div>
+          <div class="bestemming-artikel">Art. ${escH(artikelNr)}</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-label">Maatvoeringen</div>
+        ${heeftMaatvoering
+          ? `<div class="maatvoering-grid">${maatHTML}</div>`
+          : `<div style="padding:8px 10px;background:#FFF3E0;border-radius:6px;font-size:12px;color:#E65100">⚠️ Geen gedigitaliseerde maatvoeringen — zie planregeltekst</div>`}
+      </div>
+      <div class="section">
+        <div class="section-label">Bouwvlak</div>
+        <div class="aanduiding-list">
+          ${bouwvlakAanwezig
+            ? `<span class="aanduiding-chip chip-green">✅ Bouwvlak aanwezig op locatie</span>`
+            : `<span class="aanduiding-chip chip-gray">○ Geen bouwvlak op locatie</span>`}
+        </div>
+      </div>
+      ${tekstHTML}
+      <div class="footer-note">ℹ️ Data: Ruimtelijke Plannen API v4 · ${new Date().toLocaleDateString('nl-NL')}</div>
+    </div>`;
+}
+
+function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Hoofdfunctie ──────────────────────────────────────────────────
+async function laadBlokvenlaan() {
+  const apiKey = document.getElementById('rpKeyInput').value.trim();
+  if (!apiKey) return;
+
+  const container = document.getElementById('resultaatContainer');
+  container.innerHTML = `<div class="card"><div class="planregels-body"><div class="section"><div class="loading-pulse"></div></div><div class="section"><div class="loading-pulse" style="height:40px"></div></div></div></div>`;
+
+  try {
+    // ── 1. Geocode ───────────────────────────────────────────────
+    status('📍 Adres geocoderen via PDOK…');
+    const geo = await fetch('https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=Blokvenlaan+23+Waalre&rows=1&fl=centroide_ll,centroide_rd,straatnaam,huisnummer,woonplaatsnaam');
+    const geoJson = await geo.json();
+    const doc = geoJson?.response?.docs?.[0];
+    if (!doc) throw new Error('Adres niet gevonden via PDOK');
+
+    const [lng, lat] = doc.centroide_ll.replace('POINT(','').replace(')','').split(' ').map(Number);
+    const [rdX, rdY] = doc.centroide_rd.replace('POINT(','').replace(')','').split(' ').map(Number);
+    const adres = `${doc.straatnaam||''} ${doc.huisnummer||''}, ${doc.woonplaatsnaam||''}`.trim();
+
+    document.getElementById('locatieBadge').style.display = 'block';
+    document.getElementById('locatieBadge').innerHTML = `📍 <strong>${adres}</strong> — lat ${lat.toFixed(5)}, lng ${lng.toFixed(5)}`;
+
+    // ── 2. Plan ophalen ──────────────────────────────────────────
+    status('🏛️ Bestemmingsplan opzoeken…');
+    const crs = rdX ? 'epsg:28992' : 'epsg:4258';
+    const coords = rdX ? [rdX, rdY] : [lng, lat];
+    const planResp = await fetch(`${BASE_RP}/plannen/_zoek?pageSize=20`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey, 'Content-Crs': crs },
+      body: JSON.stringify({
+        _geo: { intersects: { type: 'Point', coordinates: coords } },
+        planType: ['bestemmingsplan','wijzigingsplan','uitwerkingsplan','inpassingsplan','beheersverordening'],
+        status: ['vastgesteld','geconsolideerd']
+      })
+    });
+    if (!planResp.ok) throw new Error(`Plan ophalen mislukt (${planResp.status})`);
+    const planJson = await planResp.json();
+    const plannen = planJson._embedded?.plannen || [];
+    if (!plannen.length) throw new Error('Geen geldig bestemmingsplan gevonden voor dit adres');
+    const plan = plannen[0];
+    const planId = plan.identificatie || plan.id;
+    const planNaam = plan.naam || '—';
+    const planStatus = plan.planstatusInfo?.planstatus || plan.status || '—';
+    const planDatum = plan.planstatusInfo?.datum || '';
+    const bevoegdGezag = plan.beleidsmatigVerantwoordelijkeOverheid?.naam?.[0] || plan.bevoegdGezag?.naam || '—';
+
+    // ── 3. Bestemmingsvlakken ophalen ────────────────────────────
+    status('🗺️ Bestemmingsvlakken ophalen…');
+    const vlakken = await haalAlleBestemmingsvlakken(planId, apiKey, crs);
+
+    // Vind actieve bestemming via PiP (GeoJSON coords)
+    const actiefVlak = vlakken.find(v => v.geometrie && puntInGeoJsonPolygoon(lat, lng, v.geometrie));
+
+    // ── 4. Bouwvlak check ────────────────────────────────────────
+    status('📐 Bouwvlakken controleren…');
+    const bvResp = await fetch(
+      `${BASE_RP}/plannen/${encodeURIComponent(planId)}/bouwvlakken?expand=geometrie&pageSize=100`,
+      { headers: { 'X-Api-Key': apiKey, 'Accept-Crs': crs } }
+    );
+    let bouwvlakAanwezig = false;
+    if (bvResp.ok) {
+      const bvJson = await bvResp.json();
+      bouwvlakAanwezig = (bvJson._embedded?.bouwvlakken || [])
+        .some(bv => bv.geometrie && puntInGeoJsonPolygoon(lat, lng, bv.geometrie));
     }
 
-    // Maak een arceringspatroon per bestemmingstype
-    Object.entries(IMRO_KLEUR).forEach(([naam, k]) => {
-      const id = 'pat-' + naam.toLowerCase().replace(/[^a-z]/g, '');
-      if (svg.querySelector('#' + id)) return;
-      const pat = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-      pat.setAttribute('id', id);
-      pat.setAttribute('patternUnits', 'userSpaceOnUse');
-      pat.setAttribute('width', '12');
-      pat.setAttribute('height', '12');
-      pat.innerHTML = `
-        <rect width="12" height="12" fill="${k.fill}"/>
-        <text x="2" y="9.5" font-size="9" font-family="monospace"
-              fill="${k.hatch}" opacity="0.7">+</text>`;
-      defs.appendChild(pat);
-    });
+    // ── 5. Maatvoeringen ophalen ─────────────────────────────────
+    status('📏 Maatvoeringen ophalen…');
+    const maatvoeringen = await haalMaatvoeringen(planId, actiefVlak?.id, apiKey, crs, lat, lng);
 
-    // Wissel fillColor om naar het arceringspatroon
-    polygonLaag.forEach(({ poly, z }) => {
-      const id = 'pat-' + z.groep.toLowerCase().replace(/[^a-z]/g, '');
-      if (svg.querySelector('#' + id)) {
-        poly.setStyle({ fillColor: `url(#${id})`, fillOpacity: 1 });
-      }
-    });
+    // ── 6. Planregeltekst ophalen ────────────────────────────────
+    status('📖 Planregeltekst ophalen…');
+    const tekstId = actiefVlak?.verwijzingNaarTekst;
+    const tekst = await haalTekst(tekstId, apiKey);
+
+    // ── 7. Render ────────────────────────────────────────────────
+    status('');
+    container.innerHTML = `
+      <div class="card">
+        <div class="plan-header" onclick="this.nextElementSibling.nextElementSibling.style.display=this.nextElementSibling.nextElementSibling.style.display==='none'?'':'none'">
+          <div>
+            <div class="plan-naam">${escH(planNaam)}</div>
+            <div class="plan-meta">
+              <span>📄 bestemmingsplan</span>
+              <span class="badge badge-green">✓ ${escH(planStatus)}</span>
+              ${planDatum ? `<span>📅 ${planDatum.slice(0,10).split('-').reverse().join('-')}</span>` : ''}
+              <span>🏛 ${escH(bevoegdGezag)}</span>
+            </div>
+          </div>
+          <span class="chevron open">▼</span>
+        </div>
+        <div id="liveMapWrap" class="mini-map"></div>
+        <div id="planregelBody"></div>
+      </div>`;
+
+    renderPlanregels(
+      document.getElementById('planregelBody'),
+      actiefVlak, bouwvlakAanwezig, maatvoeringen, tekst
+    );
+
+    // Kaart
+    const kaart = initKaart('liveMapWrap');
+    toonVlakkenOpKaart(kaart, vlakken, lat, lng);
+
+  } catch(e) {
+    status('❌ ' + e.message, '#C0392B');
+    container.innerHTML = `<div style="padding:16px;font-size:13px;color:#C0392B;background:#FFEEEE;border-radius:8px;">❌ ${escH(e.message)}</div>`;
   }
+}
 
-  // Kleine delay: Leaflet rendert SVG-paths asynchroon
-  setTimeout(injectPatterns, 300);
-
-  L.control.zoom({ position: 'bottomright' }).addTo(miniMap);
-
-  // ── Toggle plan ────────────────────────────────────────────────────────────
-  let planOpen = true;
-  function togglePlan() {
-    planOpen = !planOpen;
-    document.getElementById('planBody').style.display = planOpen ? '' : 'none';
-    document.getElementById('miniMap').style.display = planOpen ? '' : 'none';
-    document.getElementById('chev').className = 'chevron ' + (planOpen ? 'open' : '');
-    if (planOpen) { miniMap.invalidateSize(); setTimeout(injectPatterns, 100); }
-  }
-
-  let tekstOpen = false;
-  function toggleTekst() {
-    tekstOpen = !tekstOpen;
-    document.getElementById('tekstBody').classList.toggle('open', tekstOpen);
-    document.getElementById('tekstChev').textContent = tekstOpen ? '▲' : '▼';
-  }
+// Pre-fill vanuit vth_settings localStorage (zelfde key als de app)
+(function() {
+  try {
+    const s = JSON.parse(localStorage.getItem('vth_settings') || '{}');
+    if (s.rpApiKey) document.getElementById('rpKeyInput').value = s.rpApiKey;
+    document.getElementById('laadBtn').disabled = !s.rpApiKey;
+  } catch(e) {}
+})();
 </script>
 
 <style>
   .bp-tooltip { font-size: 12px; }
+  .mv-item.ontbreekt .mv-waarde { color: #bbb; }
 </style>
 </body>
 </html>
