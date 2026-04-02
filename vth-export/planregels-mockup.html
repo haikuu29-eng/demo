@@ -158,7 +158,7 @@
 
   /* Mini map */
   .mini-map {
-    height: 200px;
+    height: 240px;
     border-bottom: 1px solid var(--border);
   }
   .leaflet-control-attribution { font-size: 9px !important; }
@@ -374,22 +374,38 @@
   const LAT = 51.3935, LNG = 5.4620;
 
   const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: true })
-    .setView([LAT, LNG], 17);
+    .setView([LAT, LNG], 18);
 
-  // OSM achtergrond (licht grijs)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-    attribution: '© OSM © CARTO',
-    subdomains: 'abcd', maxZoom: 20
+  // 1. Neutrale achtergrond zonder labels (anders rommel onder het plan)
+  L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png', {
+    attribution: 'Achtergrondkaart © PDOK/Kadaster',
+    maxZoom: 20
   }).addTo(miniMap);
 
-  // PDOK bestemmingsplan WMS (gratis, geen key nodig)
-  L.tileLayer.wms('https://service.pdok.nl/rvo/ruimtelijkeplannen/wms/v1_0', {
-    layers: 'enkelbestemming,dubbelbestemming,bouwvlak,functieaanduiding,bouwaanduiding,gebiedsaanduiding,maatvoering',
+  // 2. Officiële bestemmingsplan WMS — zelfde bron als ruimtelijkeplannen.nl
+  //    Laagvolgorde: eerst vlakken, dan aanduidingen, dan maatvoeringen bovenop
+  L.tileLayer.wms('https://geodata.nationaalgeoregister.nl/ruimtelijkeplannen/wms', {
+    layers: [
+      'enkelbestemming',
+      'dubbelbestemming',
+      'gebiedsaanduiding',
+      'bouwvlak',
+      'functieaanduiding',
+      'bouwaanduiding',
+      'maatvoering',
+      'figuur'
+    ].join(','),
     format: 'image/png',
     transparent: true,
-    opacity: 0.85,
+    opacity: 1.0,
+    version: '1.1.1',
     attribution: 'Ruimtelijke Plannen © PDOK'
   }).addTo(miniMap);
+
+  // 3. Labels (huisnrs, straatnamen) bovenop het bestemmingsplan
+  L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png', {
+    opacity: 0, maxZoom: 20  // placeholder — labels komen uit de WMS-stijl zelf
+  });
 
   // Locatie-pin
   const pin = L.divIcon({
