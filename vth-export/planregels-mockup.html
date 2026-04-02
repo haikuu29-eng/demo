@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mockup — Planregels per locatie</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --primary: #1B6B6B;
@@ -154,6 +156,13 @@
     100% { background-position: -200% 0; }
   }
 
+  /* Mini map */
+  .mini-map {
+    height: 200px;
+    border-bottom: 1px solid var(--border);
+  }
+  .leaflet-control-attribution { font-size: 9px !important; }
+
   /* Footer note */
   .footer-note {
     font-size: 11px; color: var(--text-secondary);
@@ -202,6 +211,9 @@
     </div>
     <span class="chevron open" id="chev">▼</span>
   </div>
+
+  <!-- Mini bestemmingsplankaart -->
+  <div id="miniMap" class="mini-map"></div>
 
   <!-- Planregels body -->
   <div class="planregels-body" id="planBody">
@@ -357,11 +369,47 @@
 </div>
 
 <script>
+  // ── Mini bestemmingsplankaart ──────────────────────────────────────────────
+  // Fictieve locatie: Dorpstraat 14, Waalre (approx)
+  const LAT = 51.3935, LNG = 5.4620;
+
+  const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: true })
+    .setView([LAT, LNG], 17);
+
+  // OSM achtergrond (licht grijs)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '© OSM © CARTO',
+    subdomains: 'abcd', maxZoom: 20
+  }).addTo(miniMap);
+
+  // PDOK bestemmingsplan WMS (gratis, geen key nodig)
+  L.tileLayer.wms('https://service.pdok.nl/rvo/ruimtelijkeplannen/wms/v1_0', {
+    layers: 'enkelbestemming,dubbelbestemming,bouwvlak,functieaanduiding,bouwaanduiding,gebiedsaanduiding,maatvoering',
+    format: 'image/png',
+    transparent: true,
+    opacity: 0.85,
+    attribution: 'Ruimtelijke Plannen © PDOK'
+  }).addTo(miniMap);
+
+  // Locatie-pin
+  const pin = L.divIcon({
+    html: `<div style="width:16px;height:16px;background:#C4622D;border:3px solid #fff;
+                border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>`,
+    className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+  });
+  L.marker([LAT, LNG], { icon: pin }).addTo(miniMap);
+
+  // Zoom knoppen rechtsonder
+  L.control.zoom({ position: 'bottomright' }).addTo(miniMap);
+
+  // ── Toggle plan ────────────────────────────────────────────────────────────
   let planOpen = true;
   function togglePlan() {
     planOpen = !planOpen;
     document.getElementById('planBody').style.display = planOpen ? '' : 'none';
+    document.getElementById('miniMap').style.display = planOpen ? '' : 'none';
     document.getElementById('chev').className = 'chevron ' + (planOpen ? 'open' : '');
+    if (planOpen) miniMap.invalidateSize();
   }
 
   let tekstOpen = false;
