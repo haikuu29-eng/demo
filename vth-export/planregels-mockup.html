@@ -420,73 +420,79 @@
   const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: true })
     .setView([LAT, LNG], 18);
 
-  // Neutrale lichte achtergrond
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OSM © CARTO', subdomains: 'abcd', maxZoom: 20, opacity: 0.4
+    attribution: '© OSM © CARTO', subdomains: 'abcd', maxZoom: 20, opacity: 0.5
   }).addTo(miniMap);
 
-  // ── SVG arceringspatronen injecteren (IMRO + arcering) ─────────────────────
-  function injectPatterns() {
-    const svg = miniMap.getPane('overlayPane').querySelector('svg');
-    if (!svg) { setTimeout(injectPatterns, 80); return; }
+  // ── Stap 1: zones tekenen met solid fill (dit triggert Leaflet SVG-aanmaak) ─
+  const polygonLaag = [];
 
+  ZONES.forEach(z => {
+    const k = IMRO_KLEUR[z.groep] || IMRO_KLEUR['Wonen'];
+    const poly = L.polygon(z.poly, {
+      fillColor: k.fill,
+      fillOpacity: 0.85,
+      color: z.actief ? '#C4622D' : '#333',
+      weight: z.actief ? 3 : 1.5
+    }).addTo(miniMap);
+    poly.bindTooltip(`<b>${z.naam}</b><br><small>${z.groep}</small>`,
+      { sticky: true, className: 'bp-tooltip' });
+    polygonLaag.push({ poly, z, k });
+  });
+
+  L.polygon(BOUWVLAK, {
+    fillOpacity: 0, color: '#000', weight: 2.5, dashArray: '7 4'
+  }).addTo(miniMap).bindTooltip('Bouwvlak', { sticky: true });
+
+  const pin = L.divIcon({
+    html: `<div style="width:18px;height:18px;background:#C4622D;border:3px solid #fff;
+                border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
+    className: '', iconSize: [18, 18], iconAnchor: [9, 9]
+  });
+  L.marker([LAT, LNG], { icon: pin }).addTo(miniMap);
+
+  // ── Stap 2: SVG-patronen injecteren NA aanmaak polygonen ──────────────────
+  //    Nu bestaat de SVG-overlay gegarandeerd
+  function injectPatterns() {
+    // Leaflet's vector SVG zit in de overlayPane (of een child-SVG)
+    const pane = miniMap.getPane('overlayPane');
+    const svg = pane && pane.querySelector('svg');
+    if (!svg) return; // polygonen zouden dit al getriggerd moeten hebben
+
+    // Voeg <defs> toe als die er nog niet is
     let defs = svg.querySelector('defs');
     if (!defs) {
       defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
       svg.insertBefore(defs, svg.firstChild);
     }
 
+    // Maak een arceringspatroon per bestemmingstype
     Object.entries(IMRO_KLEUR).forEach(([naam, k]) => {
-      const id = 'pat-' + naam.toLowerCase();
-      if (defs.querySelector('#' + id)) return;
-      defs.innerHTML += `
-        <pattern id="${id}" patternUnits="userSpaceOnUse" width="12" height="12">
-          <rect width="12" height="12" fill="${k.fill}"/>
-          <text x="2.5" y="9.5" font-size="9" font-family="monospace"
-                fill="${k.hatch}" opacity="0.75">+</text>
-        </pattern>`;
+      const id = 'pat-' + naam.toLowerCase().replace(/[^a-z]/g, '');
+      if (svg.querySelector('#' + id)) return;
+      const pat = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+      pat.setAttribute('id', id);
+      pat.setAttribute('patternUnits', 'userSpaceOnUse');
+      pat.setAttribute('width', '12');
+      pat.setAttribute('height', '12');
+      pat.innerHTML = `
+        <rect width="12" height="12" fill="${k.fill}"/>
+        <text x="2" y="9.5" font-size="9" font-family="monospace"
+              fill="${k.hatch}" opacity="0.7">+</text>`;
+      defs.appendChild(pat);
     });
-    tekenenOpKaart();
-  }
 
-  function tekenenOpKaart() {
-    // Bestemmingsvlakken
-    ZONES.forEach(z => {
-      const k = IMRO_KLEUR[z.groep] || IMRO_KLEUR['Wonen'];
-      const opts = {
-        fillColor: `url(#pat-${z.groep.toLowerCase()})`,
-        fillOpacity: 1,
-        color: '#222',
-        weight: z.actief ? 3 : 1.5,
-        dashArray: null
-      };
-      const p = L.polygon(z.poly, opts).addTo(miniMap);
-      p.bindTooltip(`<b>${z.naam}</b><br><small>${z.groep}</small>`,
-        { sticky: true, className: 'bp-tooltip' });
-
-      // Highlight active zone
-      if (z.actief) {
-        p.setStyle({ color: '#C4622D', weight: 3 });
+    // Wissel fillColor om naar het arceringspatroon
+    polygonLaag.forEach(({ poly, z }) => {
+      const id = 'pat-' + z.groep.toLowerCase().replace(/[^a-z]/g, '');
+      if (svg.querySelector('#' + id)) {
+        poly.setStyle({ fillColor: `url(#${id})`, fillOpacity: 1 });
       }
     });
-
-    // Bouwvlak (dik gestippeld zwart)
-    L.polygon(BOUWVLAK, {
-      fillOpacity: 0, color: '#000', weight: 3, dashArray: '6 4'
-    }).addTo(miniMap).bindTooltip('Bouwvlak', { sticky: true });
-
-    // Locatie-pin
-    const pin = L.divIcon({
-      html: `<div style="width:18px;height:18px;background:#C4622D;border:3px solid #fff;
-                  border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
-      className: '', iconSize: [18, 18], iconAnchor: [9, 9]
-    });
-    L.marker([LAT, LNG], { icon: pin }).addTo(miniMap);
   }
 
-  // Trigger na korte delay zodat Leaflet de SVG-overlay heeft aangemaakt
-  miniMap.on('load', () => setTimeout(injectPatterns, 50));
-  setTimeout(injectPatterns, 200);
+  // Kleine delay: Leaflet rendert SVG-paths asynchroon
+  setTimeout(injectPatterns, 300);
 
   L.control.zoom({ position: 'bottomright' }).addTo(miniMap);
 
