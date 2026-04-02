@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup — Planregels per locatie</title>
+<style>
+  :root {
+    --primary: #1B6B6B;
+    --primary-light: #EEF7F7;
+    --accent: #C4622D;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666;
+    --border: #D0E8E8;
+    --radius-sm: 8px;
+    --radius: 12px;
+    --bg: #F5F7F7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  h3 { font-size: 13px; color: var(--text-secondary); text-transform: uppercase;
+       letter-spacing: .5px; margin-bottom: 10px; }
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  /* ── Plan header ── */
+  .plan-header {
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .plan-header:hover { background: #fafafa; }
+  .plan-naam { font-size: 13px; font-weight: 600; }
+  .plan-meta { font-size: 11px; color: var(--text-secondary); margin-top: 3px;
+               display: flex; flex-wrap: wrap; gap: 6px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 99px; font-size: 11px; font-weight: 500;
+  }
+  .badge-green  { background: #E6F4F1; color: #1B6B6B; }
+  .badge-orange { background: #FFF3E0; color: #C4622D; }
+  .badge-gray   { background: #F0F0F0; color: #666; }
+  .chevron { font-size: 12px; color: var(--text-secondary); transition: transform .2s; }
+  .chevron.open { transform: rotate(180deg); }
+
+  /* ── Planregels body ── */
+  .planregels-body { border-top: 1px solid var(--border); }
+
+  /* Section */
+  .section { padding: 12px 14px; border-bottom: 1px solid #F0F5F5; }
+  .section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: 11px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px;
+  }
+
+  /* Bestemming row */
+  .bestemming-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .bestemming-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .bestemming-naam { font-size: 15px; font-weight: 700; }
+  .bestemming-type { font-size: 12px; color: var(--text-secondary); }
+  .bestemming-artikel {
+    margin-left: auto; font-size: 11px; color: var(--primary);
+    background: var(--primary-light); padding: 3px 8px; border-radius: 99px;
+    white-space: nowrap;
+  }
+
+  /* Maatvoeringen grid */
+  .maatvoering-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .mv-item {
+    background: var(--primary-light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+  }
+  .mv-waarde { font-size: 18px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+  .mv-naam { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .mv-item.ontbreekt { opacity: .5; }
+  .mv-item.ontbreekt .mv-waarde { font-size: 14px; }
+
+  /* Bouwvlak + aanduidingen */
+  .aanduiding-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .aanduiding-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 99px; font-size: 12px;
+    border: 1px solid;
+  }
+  .chip-green  { background: #E6F4F1; border-color: #A8D5CB; color: #1B6B6B; }
+  .chip-orange { background: #FFF3E0; border-color: #FFD0A0; color: #C4622D; }
+  .chip-gray   { background: #F5F5F5; border-color: #DDD; color: #666; }
+  .chip-red    { background: #FFEEEE; border-color: #FFB0B0; color: #C0392B; }
+
+  /* Planregeltekst */
+  .tekst-toggle {
+    width: 100%; padding: 10px 14px;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 600; color: var(--primary);
+    border-top: 1px solid var(--border);
+    text-align: left;
+  }
+  .tekst-toggle:hover { background: var(--primary-light); }
+  .tekst-inhoud {
+    padding: 12px 14px;
+    font-size: 12px; line-height: 1.6; color: var(--text-primary);
+    border-top: 1px solid #EEF5F5;
+    display: none;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .tekst-inhoud.open { display: block; }
+  .tekst-inhoud h4 { font-size: 12px; font-weight: 700; margin: 10px 0 4px; color: var(--primary); }
+  .tekst-inhoud p { margin-bottom: 6px; }
+  .tekst-inhoud table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .tekst-inhoud th, .tekst-inhoud td {
+    border: 1px solid #D0E8E8; padding: 5px 8px; text-align: left;
+  }
+  .tekst-inhoud th { background: var(--primary-light); font-weight: 600; }
+
+  /* Loading state */
+  .loading-pulse {
+    height: 60px; border-radius: 8px;
+    background: linear-gradient(90deg, #f0f5f5 25%, #e0eeee 50%, #f0f5f5 75%);
+    background-size: 200% 100%;
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Footer note */
+  .footer-note {
+    font-size: 11px; color: var(--text-secondary);
+    padding: 8px 14px 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* Tabs at top */
+  .tabs { display: flex; gap: 0; margin-bottom: 14px; border-radius: var(--radius-sm);
+          overflow: hidden; border: 1px solid var(--border); background: #fff; }
+  .tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 12px;
+         border: none; background: none; cursor: pointer; color: var(--text-secondary); }
+  .tab.active { background: var(--primary); color: #fff; font-weight: 600; }
+
+  .note {
+    background: #FFFBE6; border: 1px solid #FFD95C; border-radius: 8px;
+    padding: 10px 12px; font-size: 12px; color: #7A5C00; margin-bottom: 14px;
+  }
+</style>
+</head>
+<body>
+
+<p style="font-size:11px; color:#999; margin-bottom:16px; text-align:center;">
+  🎨 Mockup — zo ziet de feature eruit in de app
+</p>
+
+<div class="note">
+  📍 <strong>Dorpstraat 14, Waalre</strong> — Bestemmingsplan Waalre e.o. 2013
+</div>
+
+<!-- ── PLAN KAART MET UITKLAP ── -->
+<h3>Vigerende plannen</h3>
+
+<div class="card">
+
+  <!-- Plan header (zoals nu al bestaat) -->
+  <div class="plan-header" onclick="togglePlan()">
+    <div>
+      <div class="plan-naam">Bestemmingsplan Waalre e.o. 2013</div>
+      <div class="plan-meta">
+        <span>📄 bestemmingsplan</span>
+        <span class="badge badge-green">✓ vastgesteld</span>
+        <span>📅 15-06-2013</span>
+        <span>🏛 Gemeente Waalre</span>
+      </div>
+    </div>
+    <span class="chevron open" id="chev">▼</span>
+  </div>
+
+  <!-- Planregels body -->
+  <div class="planregels-body" id="planBody">
+
+    <!-- 1. BESTEMMING -->
+    <div class="section">
+      <div class="section-label">Bestemming</div>
+      <div class="bestemming-row">
+        <div class="bestemming-icon">🏠</div>
+        <div>
+          <div class="bestemming-naam">Wonen</div>
+          <div class="bestemming-type">Enkelbestemming</div>
+        </div>
+        <div class="bestemming-artikel">Art. 12</div>
+      </div>
+    </div>
+
+    <!-- 2. MAATVOERINGEN -->
+    <div class="section">
+      <div class="section-label">Maatvoeringen</div>
+      <div class="maatvoering-grid">
+        <div class="mv-item">
+          <div class="mv-waarde">9 m</div>
+          <div class="mv-naam">Max. bouwhoogte</div>
+        </div>
+        <div class="mv-item">
+          <div class="mv-waarde">6 m</div>
+          <div class="mv-naam">Max. goothoogte</div>
+        </div>
+        <div class="mv-item">
+          <div class="mv-waarde">50%</div>
+          <div class="mv-naam">Bebouwingspercentage</div>
+        </div>
+        <div class="mv-item">
+          <div class="mv-waarde">2</div>
+          <div class="mv-naam">Max. bouwlagen</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. BOUWVLAK + AANDUIDINGEN -->
+    <div class="section">
+      <div class="section-label">Aanduidingen</div>
+      <div class="aanduiding-list">
+        <span class="aanduiding-chip chip-green">🟩 Bouwvlak aanwezig</span>
+        <span class="aanduiding-chip chip-orange">🔶 aanduidingen: "tuin"</span>
+        <span class="aanduiding-chip chip-gray">📐 Bouwperceelgrens</span>
+      </div>
+    </div>
+
+    <!-- 4. GEBIEDSAANDUIDINGEN -->
+    <div class="section">
+      <div class="section-label">Gebiedsaanduidingen</div>
+      <div class="aanduiding-list">
+        <span class="aanduiding-chip chip-red">⚠️ Geluidzone industrie</span>
+        <span class="aanduiding-chip chip-gray">🔵 Wro-zone — wijzigingsgebied</span>
+      </div>
+    </div>
+
+    <!-- 5. PLANREGELTEKST (uitklapbaar) -->
+    <button class="tekst-toggle" onclick="toggleTekst()">
+      📖 Artikel 12 — Wonen (planregeltekst)
+      <span id="tekstChev">▼</span>
+    </button>
+    <div class="tekst-inhoud" id="tekstBody">
+      <h4>12.1 Bestemmingsomschrijving</h4>
+      <p>De voor <strong>Wonen</strong> aangewezen gronden zijn bestemd voor:</p>
+      <p>a. wonen, al dan niet in combinatie met een aan-huis-verbonden beroep of kleinschalige bedrijfsmatige activiteiten;</p>
+      <p>b. tuinen en erven.</p>
+
+      <h4>12.2 Bouwregels</h4>
+      <p><em>12.2.1 Hoofdgebouwen</em></p>
+      <table>
+        <tr><th>Maat</th><th>Waarde</th></tr>
+        <tr><td>Maximale bouwhoogte</td><td>9 meter</td></tr>
+        <tr><td>Maximale goothoogte</td><td>6 meter</td></tr>
+        <tr><td>Maximale bouwdiepte</td><td>15 meter</td></tr>
+        <tr><td>Bebouwingspercentage perceel</td><td>50%</td></tr>
+      </table>
+
+      <p><em>12.2.2 Bijgebouwen en overkappingen</em></p>
+      <p>De bouwhoogte van bijgebouwen en overkappingen bedraagt ten hoogste 3,5 meter; de oppervlakte bedraagt ten hoogste 75 m².</p>
+
+      <h4>12.3 Afwijken van de bouwregels</h4>
+      <p>Het bevoegd gezag kan afwijking verlenen voor het bouwen van hoofdgebouwen tot een bouwhoogte van maximaal 11 meter, mits de stedenbouwkundige situatie dit toelaat.</p>
+    </div>
+
+    <div class="footer-note">
+      ℹ️ Data: Ruimtelijke Plannen API · gecached 01-04-2026
+    </div>
+  </div>
+</div>
+
+<!-- ── VOORBEELD: MAATVOERING ONTBREEKT ── -->
+<h3 style="margin-top:8px;">Voorbeeld: maatvoering niet gedigitaliseerd</h3>
+<div class="card" style="opacity:.85;">
+  <div class="plan-header">
+    <div>
+      <div class="plan-naam">Bestemmingsplan Buitengebied 2019</div>
+      <div class="plan-meta">
+        <span>📄 bestemmingsplan</span>
+        <span class="badge badge-green">✓ vastgesteld</span>
+      </div>
+    </div>
+  </div>
+  <div class="planregels-body">
+    <div class="section">
+      <div class="section-label">Bestemming</div>
+      <div class="bestemming-row">
+        <div class="bestemming-icon">🌿</div>
+        <div>
+          <div class="bestemming-naam">Agrarisch</div>
+          <div class="bestemming-type">Enkelbestemming</div>
+        </div>
+        <div class="bestemming-artikel">Art. 3</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-label">Maatvoeringen</div>
+      <div style="display:flex; align-items:center; gap:8px; padding:6px 0;
+                  font-size:12px; color:#E65100; background:#FFF3E0;
+                  border-radius:6px; padding:8px 10px;">
+        ⚠️ Maatvoeringen niet digitaal beschikbaar — zie planregeltekst
+      </div>
+    </div>
+    <button class="tekst-toggle">
+      📖 Artikel 3 — Agrarisch (planregeltekst) ▼
+    </button>
+    <div class="footer-note">ℹ️ Data: Ruimtelijke Plannen API · gecached 01-04-2026</div>
+  </div>
+</div>
+
+<!-- ── VOORBEELD: LOADING STATE ── -->
+<h3 style="margin-top:8px;">Laadstatus tijdens ophalen</h3>
+<div class="card">
+  <div class="plan-header">
+    <div>
+      <div class="plan-naam">Bestemmingsplan Waalre e.o. 2013</div>
+      <div class="plan-meta">
+        <span class="badge badge-green">✓ vastgesteld</span>
+      </div>
+    </div>
+    <span style="font-size:12px; color:var(--primary);">⏳ ophalen…</span>
+  </div>
+  <div class="planregels-body">
+    <div class="section">
+      <div class="loading-pulse"></div>
+    </div>
+    <div class="section" style="padding-top:8px;">
+      <div class="loading-pulse" style="height:40px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let planOpen = true;
+  function togglePlan() {
+    planOpen = !planOpen;
+    document.getElementById('planBody').style.display = planOpen ? '' : 'none';
+    document.getElementById('chev').className = 'chevron ' + (planOpen ? 'open' : '');
+  }
+
+  let tekstOpen = false;
+  function toggleTekst() {
+    tekstOpen = !tekstOpen;
+    document.getElementById('tekstBody').classList.toggle('open', tekstOpen);
+    document.getElementById('tekstChev').textContent = tekstOpen ? '▲' : '▼';
+  }
+</script>
+</body>
+</html>
