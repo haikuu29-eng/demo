@@ -1100,6 +1100,7 @@ a { color: inherit; text-decoration: none; }
 
     <div id="tab-basis">
       <div class="detail-grid" id="detailGrid"></div>
+      <div id="zaaksysteemKnop"></div>
       <div id="rodkKnop"></div>
       <div id="dsoPanel"></div>
       <div id="projectVoorschriften"></div>
@@ -6138,7 +6139,17 @@ function renderProjectDetail() {
   const grid = document.getElementById('detailGrid');
   grid.innerHTML = `
     ${detailItem('Projectnaam', p.naam)}
-    ${detailItem('Zaaknummer', p.zaaknummer || '-')}
+    ${detailItem('Zaaknummer', p.zaaknummer
+      ? `<span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+           <span>${escapeHtml(p.zaaknummer)}</span>
+           <a href="https://mijn.waalre.nl/intern/zaak/${encodeURIComponent(p.zaaknummer)}" target="_blank" rel="noopener"
+             style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px;
+                    background:var(--primary); color:#fff; border-radius:99px; font-size:11px;
+                    font-weight:600; text-decoration:none; white-space:nowrap;">
+             ↗ Open in zaaksysteem
+           </a>
+         </span>`
+      : '-')}
     ${detailItem('Type zaak', p.typeZaak || '-')}
     ${detailItem('Status', `<span class="status-chip ${(p.status||'').toLowerCase().replace(/ /g,'-')}">${escapeHtml(p.status || 'Open')}</span>`)}
     ${detailItem('Straat + huisnummer', p.straat || '-')}
@@ -6150,6 +6161,30 @@ function renderProjectDetail() {
     ${detailItem('Aannemer', [p.aannemerNaam, p.aannemerContact].filter(Boolean).join(' — ') || '-')}
     ${p.opmerkingen ? detailItem('Opmerkingen', p.opmerkingen, true) : ''}
   `;
+
+  // Zaaksysteem knop
+  const zaakContainer = document.getElementById('zaaksysteemKnop');
+  if (zaakContainer) {
+    if (p.zaaknummer) {
+      const zaakUrl = `https://mijn.waalre.nl/intern/zaak/${encodeURIComponent(p.zaaknummer)}`;
+      zaakContainer.innerHTML = `
+        <a href="${zaakUrl}" target="_blank" rel="noopener"
+          style="display:flex; align-items:center; gap:10px; padding:14px 16px; background:#FFF8F5;
+                 border:1px solid var(--accent); border-radius:var(--radius-sm); text-decoration:none; margin-top:4px;">
+          <span style="font-size:22px;">📂</span>
+          <div style="flex:1;">
+            <div style="font-size:14px; font-weight:600; color:var(--accent);">Open zaak in zaaksysteem →</div>
+            <div style="font-size:12px; color:var(--text-secondary);">Zaak ${escapeHtml(p.zaaknummer)} · mijn.waalre.nl</div>
+          </div>
+        </a>`;
+    } else {
+      zaakContainer.innerHTML = `
+        <div style="padding:12px 16px; background:var(--surface); border:1px solid var(--border);
+                    border-radius:var(--radius-sm); font-size:13px; color:var(--text-secondary); margin-top:4px;">
+          📂 Zaaksysteem — vul eerst een zaaknummer in bij de projectgegevens.
+        </div>`;
+    }
+  }
 
   // Regels op de Kaart knop
   const rodkContainer = document.getElementById('rodkKnop');
