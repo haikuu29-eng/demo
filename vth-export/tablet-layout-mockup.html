@@ -286,7 +286,7 @@
   <!-- ===== SCREEN 1: PROJECTLIJST ===== -->
   <div style="font-size: 13px; font-weight: 700; color: #1B3A52; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .8px;">Scherm 1 — Projectlijst</div>
 
-  <div class="shell" style="height: 620px;">
+  <div class="shell" style="height: 700px;">
     <!-- TOP BAR -->
     <div class="topbar">
       <div class="topbar-logo">🏗️</div>
@@ -295,7 +295,10 @@
         <div class="topbar-subtitle">Gemeente Waalre · VTH Toezicht</div>
       </div>
       <div class="topbar-spacer"></div>
-      <input class="topbar-search" placeholder="Zoek project, adres...">
+      <div style="position:relative;">
+        <input class="topbar-search" id="s1-search" placeholder="Zoek project, adres, zaaknummer..." oninput="s1Filter()">
+        <span id="s1-clear" onclick="document.getElementById('s1-search').value='';s1Filter();" style="display:none;position:absolute;right:11px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.6);cursor:pointer;font-size:14px;">✕</span>
+      </div>
       <div class="topbar-avatar">CK</div>
     </div>
 
@@ -326,133 +329,273 @@
       </div>
     </div>
 
-    <!-- MAIN -->
-    <div class="main">
-      <div class="content-header">
-        <div class="content-header-row">
-          <div class="content-title">Toezichtzaken</div>
-          <button class="btn-new">＋ Nieuw project</button>
+    <!-- MAIN: lijst + vandaag-paneel -->
+    <div class="main" style="overflow:hidden; display:grid; grid-template-columns:1fr 256px;">
+
+      <!-- === LINKER DEEL: filter + kaarten === -->
+      <div style="display:flex; flex-direction:column; overflow:hidden; border-right:1px solid #E0E5EC;">
+
+        <!-- Subheader -->
+        <div style="background:#fff; padding:12px 16px 0; border-bottom:1px solid #E0E5EC; flex-shrink:0;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <div style="font-size:17px; font-weight:700; color:#1B3A52; flex:1;">Toezichtzaken</div>
+            <select id="s1-sort" onchange="s1Filter()" style="font-size:12px; border:1px solid #D0D8E4; border-radius:6px; padding:5px 8px; color:#444; background:#fff;">
+              <option value="datum">Sorteer: Laatste controle</option>
+              <option value="naam">Sorteer: Naam A–Z</option>
+              <option value="status">Sorteer: Status</option>
+            </select>
+            <button class="btn-new" onclick="alert('Nieuw project formulier')">＋ Nieuw</button>
+          </div>
+          <!-- Filter chips -->
+          <div class="filter-row" id="s1-chips">
+            <div class="filter-chip active" data-filter="alle" onclick="s1SetChip(this,'alle')">Alle <span class="chip-count">24</span></div>
+            <div class="filter-chip" data-filter="bouwvergunning" onclick="s1SetChip(this,'bouwvergunning')">Bouwvergunning <span class="chip-count">14</span></div>
+            <div class="filter-chip" data-filter="melding" onclick="s1SetChip(this,'melding')">Melding handhaving <span class="chip-count">6</span></div>
+            <div class="filter-chip" data-filter="handhaving" onclick="s1SetChip(this,'handhaving')">Handhavingsverzoek <span class="chip-count">4</span></div>
+            <div class="filter-chip chip-nog-border" data-filter="nog" onclick="s1SetChip(this,'nog')">Nog niet gestart <span class="chip-count">5</span></div>
+            <div class="filter-chip chip-open-border" data-filter="open" onclick="s1SetChip(this,'open')">Open <span class="chip-count">8</span></div>
+            <div class="filter-chip chip-uitv-border" data-filter="uitvoering" onclick="s1SetChip(this,'uitvoering')">In uitvoering <span class="chip-count">7</span></div>
+            <div class="filter-chip chip-opl-border" data-filter="opgeleverd" onclick="s1SetChip(this,'opgeleverd')">Opgeleverd <span class="chip-count">3</span></div>
+            <div class="filter-chip chip-afg-border" data-filter="afgehandeld" onclick="s1SetChip(this,'afgehandeld')">Afgehandeld <span class="chip-count">1</span></div>
+          </div>
         </div>
-        <div class="filter-row">
-          <div class="filter-chip active">Alle (24)</div>
-          <div class="filter-chip">Bouwvergunning</div>
-          <div class="filter-chip">Melding handhaving</div>
-          <div class="filter-chip">Handhavingsverzoek</div>
-          <div class="filter-chip" style="background:#F0F0F0; color:#555;">Nog niet gestart (5)</div>
-          <div class="filter-chip" style="background:#E3F2F2; color:#1B6B6B;">Open (8)</div>
-          <div class="filter-chip" style="background:#FFF3E0; color:#E65100;">In uitvoering (7)</div>
-          <div class="filter-chip" style="background:#E8F5E9; color:#2E7D32;">Opgeleverd (3)</div>
-          <div class="filter-chip" style="background:#EDE7F6; color:#512DA8;">Afgehandeld (1)</div>
+
+        <!-- Kaarten -->
+        <div style="overflow-y:auto; flex:1; padding:12px;" id="s1-cards">
+          <!-- kaarten worden door JS ingevuld -->
         </div>
       </div>
 
-      <div class="stats-row">
-        <div class="stat-card highlight">
-          <div class="stat-value">24</div>
-          <div class="stat-label">Actieve zaken</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" style="color:#E65100;">7</div>
-          <div class="stat-label">In uitvoering</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" style="color:#1B6B6B;">3</div>
-          <div class="stat-label">Controles deze week</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" style="color:#C62828;">2</div>
-          <div class="stat-label">Actiepunten open</div>
-        </div>
-      </div>
+      <!-- === RECHTER PANEEL: Vandaag === -->
+      <div style="background:#fff; overflow-y:auto; display:flex; flex-direction:column;">
 
-      <div class="cards-area">
-        <div class="card">
-          <div class="card-top">
-            <div class="card-name">Blokvenlaan 23</div>
-            <span class="status-chip chip-uitvoering">In uitvoering</span>
+        <!-- Datum -->
+        <div style="padding:14px 16px 10px; border-bottom:1px solid #F0F4F8;">
+          <div style="font-size:11px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.6px;">Vandaag</div>
+          <div style="font-size:15px; font-weight:700; color:#1B3A52; margin-top:2px;">dinsdag 7 april 2026</div>
+        </div>
+
+        <!-- Status-overzicht mini-balk -->
+        <div style="padding:12px 16px; border-bottom:1px solid #F0F4F8;">
+          <div style="font-size:10px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px;">Statusverdeling</div>
+          <div style="display:flex; height:8px; border-radius:4px; overflow:hidden; gap:1px;">
+            <div style="background:#9E9E9E; flex:5;" title="Nog niet gestart: 5"></div>
+            <div style="background:#1B6B6B; flex:8;" title="Open: 8"></div>
+            <div style="background:#E65100; flex:7;" title="In uitvoering: 7"></div>
+            <div style="background:#2E7D32; flex:3;" title="Opgeleverd: 3"></div>
+            <div style="background:#512DA8; flex:1;" title="Afgehandeld: 1"></div>
           </div>
-          <div class="card-meta">
-            <span>📍 Waalre</span>
-            <span>🏠 Bouwvergunning</span>
-          </div>
-          <div class="card-footer">
-            <span class="card-controles">4 controles</span>
-            <span class="card-date">📅 02-04-2026</span>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+            <span style="font-size:10px; color:#666; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;background:#9E9E9E;border-radius:2px;display:inline-block;"></span>Nog niet gestart 5</span>
+            <span style="font-size:10px; color:#1B6B6B; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;background:#1B6B6B;border-radius:2px;display:inline-block;"></span>Open 8</span>
+            <span style="font-size:10px; color:#E65100; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;background:#E65100;border-radius:2px;display:inline-block;"></span>Uitvoering 7</span>
+            <span style="font-size:10px; color:#2E7D32; display:flex; align-items:center; gap:3px;"><span style="width:8px;height:8px;background:#2E7D32;border-radius:2px;display:inline-block;"></span>Opgeleverd 3</span>
           </div>
         </div>
-        <div class="card">
-          <div class="card-top">
-            <div class="card-name">Dorpstraat 7</div>
-            <span class="status-chip chip-nog">Nog niet gestart</span>
-          </div>
-          <div class="card-meta">
-            <span>📍 Waalre</span>
-            <span>🏠 Bouwvergunning</span>
-          </div>
-          <div class="card-footer">
-            <span class="card-controles">0 controles</span>
-            <span class="card-date">—</span>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-top">
-            <div class="card-name">Stationsweg 12</div>
-            <span class="status-chip chip-open">Open</span>
-          </div>
-          <div class="card-meta">
-            <span>📍 Aalst</span>
-            <span>⚠️ Melding handhaving</span>
-          </div>
-          <div class="card-footer">
-            <span class="card-controles">1 controle</span>
-            <span class="card-date">📅 28-03-2026</span>
+
+        <!-- Agenda vandaag -->
+        <div style="padding:12px 16px; border-bottom:1px solid #F0F4F8;">
+          <div style="font-size:10px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px;">Controles vandaag</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="padding:9px 10px; background:#F0F7F7; border-radius:8px; border-left:3px solid #1B6B6B;">
+              <div style="font-size:12px; font-weight:700; color:#1B3A52;">Blokvenlaan 23</div>
+              <div style="font-size:11px; color:#1B6B6B; margin-top:1px;">🕐 09:00 · Tussentijdse controle</div>
+            </div>
+            <div style="padding:9px 10px; background:#FFF8F2; border-radius:8px; border-left:3px solid #E65100;">
+              <div style="font-size:12px; font-weight:700; color:#1B3A52;">Kerkstraat 18</div>
+              <div style="font-size:11px; color:#E65100; margin-top:1px;">🕑 14:00 · Eindcontrole</div>
+            </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-top">
-            <div class="card-name">Valkenswaardseweg 5a</div>
-            <span class="status-chip chip-opgeleverd">Opgeleverd</span>
-          </div>
-          <div class="card-meta">
-            <span>📍 Waalre</span>
-            <span>🏠 Bouwvergunning</span>
-          </div>
-          <div class="card-footer">
-            <span class="card-controles">6 controles</span>
-            <span class="card-date">📅 15-03-2026</span>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-top">
-            <div class="card-name">Kerkstraat 18</div>
-            <span class="status-chip chip-uitvoering">In uitvoering</span>
-          </div>
-          <div class="card-meta">
-            <span>📍 Waalre</span>
-            <span>🔨 Handhavingsverzoek</span>
-          </div>
-          <div class="card-footer">
-            <span class="card-controles">2 controles</span>
-            <span class="card-date">📅 01-04-2026</span>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-top">
-            <div class="card-name">Eindhovenseweg 42</div>
-            <span class="status-chip chip-nog">Nog niet gestart</span>
-          </div>
-          <div class="card-meta">
-            <span>📍 Waalre</span>
-            <span>🏠 Bouwvergunning</span>
-          </div>
-          <div class="card-footer">
-            <span class="card-controles">0 controles</span>
-            <span class="card-date">—</span>
+
+        <!-- Recente activiteit -->
+        <div style="padding:12px 16px; flex:1;">
+          <div style="font-size:10px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px;">Recente activiteit</div>
+          <div style="display:flex; flex-direction:column; gap:0;">
+
+            <div style="display:flex; gap:10px; padding:8px 0; border-bottom:1px solid #F5F5F5;">
+              <div style="width:28px; height:28px; background:#E3F2F2; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;">✅</div>
+              <div>
+                <div style="font-size:11px; font-weight:600; color:#222;">Tussentijdse controle akkoord</div>
+                <div style="font-size:10px; color:#888;">Blokvenlaan 23 · 02-04-2026</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; padding:8px 0; border-bottom:1px solid #F5F5F5;">
+              <div style="width:28px; height:28px; background:#FFF3E0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;">🏗️</div>
+              <div>
+                <div style="font-size:11px; font-weight:600; color:#222;">Start uitvoering geregistreerd</div>
+                <div style="font-size:10px; color:#888;">Eindhovenseweg 42 · 01-04-2026</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; padding:8px 0; border-bottom:1px solid #F5F5F5;">
+              <div style="width:28px; height:28px; background:#FFF3E0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;">⚠️</div>
+              <div>
+                <div style="font-size:11px; font-weight:600; color:#222;">Aandachtspunten genoteerd</div>
+                <div style="font-size:10px; color:#888;">Stationsweg 12 · 01-04-2026</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; padding:8px 0; border-bottom:1px solid #F5F5F5;">
+              <div style="width:28px; height:28px; background:#E8F5E9; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;">🏁</div>
+              <div>
+                <div style="font-size:11px; font-weight:600; color:#222;">Eindcontrole — opgeleverd</div>
+                <div style="font-size:10px; color:#888;">Valkenswaardseweg 5a · 28-03-2026</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; padding:8px 0;">
+              <div style="width:28px; height:28px; background:#F0F0F0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;">📋</div>
+              <div>
+                <div style="font-size:11px; font-weight:600; color:#222;">Nieuw project aangemaakt</div>
+                <div style="font-size:10px; color:#888;">Dorpstraat 7 · 27-03-2026</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- extra CSS voor chip-borders en cards -->
+  <style>
+    .chip-count { background: rgba(0,0,0,.08); border-radius: 99px; padding: 1px 6px; font-size: 10px; margin-left: 2px; }
+    .filter-chip.active .chip-count { background: rgba(255,255,255,.25); }
+    .chip-nog-border  { border-color: #9E9E9E !important; }
+    .chip-open-border { border-color: #1B6B6B !important; }
+    .chip-uitv-border { border-color: #E65100 !important; }
+    .chip-opl-border  { border-color: #2E7D32 !important; }
+    .chip-afg-border  { border-color: #512DA8 !important; }
+
+    .s1card {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #E0E5EC;
+      border-left-width: 4px;
+      padding: 11px 14px 10px;
+      margin-bottom: 9px;
+      cursor: pointer;
+      transition: box-shadow .12s;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .s1card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.09); }
+    .s1card[data-status="nog"]        { border-left-color: #9E9E9E; }
+    .s1card[data-status="open"]       { border-left-color: #1B6B6B; }
+    .s1card[data-status="uitvoering"] { border-left-color: #E65100; }
+    .s1card[data-status="opgeleverd"] { border-left-color: #2E7D32; }
+    .s1card[data-status="afgehandeld"]{ border-left-color: #512DA8; }
+
+    .s1card-row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+    .s1card-naam { font-size:14px; font-weight:700; color:#1B3A52; line-height:1.2; }
+    .s1card-zaak { font-size:10px; color:#aaa; margin-top:2px; }
+    .s1card-row2 { display:flex; align-items:center; gap:8px; font-size:11px; color:#666; flex-wrap:wrap; }
+    .s1card-row3 { display:flex; align-items:center; justify-content:space-between; }
+    .progress-wrap { flex:1; height:4px; background:#EEF0F4; border-radius:2px; margin-right:8px; }
+    .progress-bar  { height:4px; border-radius:2px; background:#1B6B6B; }
+    .s1card[data-status="uitvoering"] .progress-bar { background:#E65100; }
+    .s1card[data-status="opgeleverd"] .progress-bar { background:#2E7D32; }
+    .s1card[data-status="afgehandeld"] .progress-bar { background:#512DA8; }
+    .s1card-date { font-size:11px; color:#aaa; white-space:nowrap; }
+    .s1card-gk { font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; background:#EDF2FF; color:#3B5BDB; flex-shrink:0; }
+    .s1card-gk.gk2 { background:#FFF4E6; color:#E67700; }
+    .s1card-gk.gk3 { background:#FFE3E3; color:#C92A2A; }
+  </style>
+
+  <script>
+  const S1_DATA = [
+    { naam:'Blokvenlaan 23',   zaak:'W-2025-0421', adres:'Waalre', type:'Bouwvergunning',     status:'uitvoering', controles:4, gk:2, datum:'02-04-2026', aannemer:'Bouwbedrijf De Wit' },
+    { naam:'Dorpstraat 7',     zaak:'W-2025-0398', adres:'Waalre', type:'Bouwvergunning',     status:'nog',        controles:0, gk:1, datum:null,          aannemer:'—' },
+    { naam:'Stationsweg 12',   zaak:'W-2026-0042', adres:'Aalst',  type:'Melding handhaving', status:'open',       controles:1, gk:1, datum:'28-03-2026', aannemer:'Particulier' },
+    { naam:'Valkenswaardseweg 5a',zaak:'W-2025-0311',adres:'Waalre',type:'Bouwvergunning',   status:'opgeleverd', controles:6, gk:2, datum:'15-03-2026', aannemer:'Van Asten Bouw' },
+    { naam:'Kerkstraat 18',    zaak:'W-2025-0387', adres:'Waalre', type:'Handhavingsverzoek', status:'uitvoering', controles:2, gk:1, datum:'01-04-2026', aannemer:'—' },
+    { naam:'Eindhovenseweg 42',zaak:'W-2026-0055', adres:'Waalre', type:'Bouwvergunning',     status:'uitvoering', controles:1, gk:3, datum:'01-04-2026', aannemer:'Smits Aannemers' },
+    { naam:'Molenstraat 3',    zaak:'W-2025-0362', adres:'Aalst',  type:'Bouwvergunning',     status:'uitvoering', controles:3, gk:2, datum:'31-03-2026', aannemer:'Bouwbedrijf De Wit' },
+    { naam:'Heide 9',          zaak:'W-2025-0344', adres:'Waalre', type:'Bouwvergunning',     status:'open',       controles:2, gk:1, datum:'25-03-2026', aannemer:'Dirkx Bouw' },
+    { naam:'Burg. Mollaan 14', zaak:'W-2026-0011', adres:'Waalre', type:'Bouwvergunning',     status:'nog',        controles:0, gk:2, datum:null,          aannemer:'—' },
+    { naam:'Julianastraat 5',  zaak:'W-2025-0290', adres:'Waalre', type:'Melding handhaving', status:'open',       controles:3, gk:1, datum:'20-03-2026', aannemer:'Particulier' },
+    { naam:'Gemeentehuis',     zaak:'W-2024-0180', adres:'Waalre', type:'Bouwvergunning',     status:'afgehandeld',controles:9, gk:3, datum:'01-02-2026', aannemer:'BAM Wonen' },
+    { naam:'Nieuweweg 33',     zaak:'W-2026-0033', adres:'Waalre', type:'Handhavingsverzoek', status:'nog',        controles:0, gk:1, datum:null,          aannemer:'—' },
+  ];
+
+  const STATUS_LABELS = { nog:'Nog niet gestart', open:'Open', uitvoering:'In uitvoering', opgeleverd:'Opgeleverd', afgehandeld:'Afgehandeld' };
+  const CHIP_CLASSES  = { nog:'chip-nog', open:'chip-open', uitvoering:'chip-uitvoering', opgeleverd:'chip-opgeleverd', afgehandeld:'chip-afgehandeld' };
+  const TYPE_ICONS    = { 'Bouwvergunning':'🏠', 'Melding handhaving':'⚠️', 'Handhavingsverzoek':'🔨', 'Anders':'📋' };
+  const PROGRESS_MAX  = { nog:0, open:0.25, uitvoering:0.55, opgeleverd:0.9, afgehandeld:1 };
+
+  let s1ActiveFilter = 'alle';
+
+  function s1SetChip(el, filter) {
+    s1ActiveFilter = filter;
+    document.querySelectorAll('#s1-chips .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    s1Filter();
+  }
+
+  function s1Filter() {
+    const q = (document.getElementById('s1-search').value || '').toLowerCase();
+    document.getElementById('s1-clear').style.display = q ? 'block' : 'none';
+    const sort = document.getElementById('s1-sort').value;
+
+    let data = S1_DATA.filter(p => {
+      const matchQ = !q || p.naam.toLowerCase().includes(q) || p.zaak.toLowerCase().includes(q) || p.adres.toLowerCase().includes(q) || p.aannemer.toLowerCase().includes(q);
+      let matchF = true;
+      if (s1ActiveFilter === 'bouwvergunning') matchF = p.type === 'Bouwvergunning';
+      else if (s1ActiveFilter === 'melding')   matchF = p.type === 'Melding handhaving';
+      else if (s1ActiveFilter === 'handhaving')matchF = p.type === 'Handhavingsverzoek';
+      else if (s1ActiveFilter === 'nog')       matchF = p.status === 'nog';
+      else if (s1ActiveFilter === 'open')      matchF = p.status === 'open';
+      else if (s1ActiveFilter === 'uitvoering')matchF = p.status === 'uitvoering';
+      else if (s1ActiveFilter === 'opgeleverd')matchF = p.status === 'opgeleverd';
+      else if (s1ActiveFilter === 'afgehandeld')matchF= p.status === 'afgehandeld';
+      return matchQ && matchF;
+    });
+
+    const statusOrd = { nog:0, open:1, uitvoering:2, opgeleverd:3, afgehandeld:4 };
+    if (sort === 'naam')   data.sort((a,b) => a.naam.localeCompare(b.naam));
+    if (sort === 'status') data.sort((a,b) => statusOrd[a.status] - statusOrd[b.status]);
+    // default: datum desc (nulls last)
+    if (sort === 'datum')  data.sort((a,b) => { if (!a.datum && !b.datum) return 0; if (!a.datum) return 1; if (!b.datum) return -1; return b.datum.split('-').reverse().join('').localeCompare(a.datum.split('-').reverse().join('')); });
+
+    const gkLabel = n => n === 3 ? 'GK3' : n === 2 ? 'GK2' : 'GK1';
+    const gkClass = n => n === 3 ? 's1card-gk gk3' : n === 2 ? 's1card-gk gk2' : 's1card-gk';
+    const progW   = s => Math.round((PROGRESS_MAX[s] || 0) * 100);
+
+    const html = data.length === 0
+      ? `<div style="text-align:center; color:#aaa; padding:40px 20px; font-size:13px;">Geen projecten gevonden</div>`
+      : data.map(p => `
+        <div class="s1card" data-status="${p.status}">
+          <div class="s1card-row1">
+            <div>
+              <div class="s1card-naam">${p.naam}</div>
+              <div class="s1card-zaak">${p.zaak}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+              <span class="status-chip ${CHIP_CLASSES[p.status]}">${STATUS_LABELS[p.status]}</span>
+              <span class="${gkClass(p.gk)}">${gkLabel(p.gk)}</span>
+            </div>
+          </div>
+          <div class="s1card-row2">
+            <span>📍 ${p.adres}</span>
+            <span>${TYPE_ICONS[p.type] || '📋'} ${p.type}</span>
+            ${p.aannemer !== '—' ? `<span>👷 ${p.aannemer}</span>` : ''}
+          </div>
+          <div class="s1card-row3">
+            <div class="progress-wrap">
+              <div class="progress-bar" style="width:${progW(p.status)}%"></div>
+            </div>
+            <span style="font-size:10px; color:#aaa; white-space:nowrap; margin-right:10px;">${p.controles} controle${p.controles !== 1 ? 's' : ''}</span>
+            <span class="s1card-date">${p.datum ? '📅 ' + p.datum : '<span style="color:#ccc;">—</span>'}</span>
+          </div>
+        </div>`).join('');
+
+    document.getElementById('s1-cards').innerHTML = html;
+  }
+
+  s1Filter();
+  </script>
 
   <!-- ===== SCREEN 2: PROJECT DETAIL (split view) ===== -->
   <div style="font-size: 13px; font-weight: 700; color: #1B3A52; margin: 32px 0 10px; text-transform: uppercase; letter-spacing: .8px;">Scherm 2 — Project Detail (split view)</div>
