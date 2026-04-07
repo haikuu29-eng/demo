@@ -5878,7 +5878,7 @@ function openProjectForm(projectId) {
     document.getElementById('pf-initContact').value = '';
     document.getElementById('pf-aannemerNaam').value = '';
     document.getElementById('pf-aannemerContact').value = '';
-    document.getElementById('pf-status').value = 'Open';
+    document.getElementById('pf-status').value = 'Nog niet gestart';
     document.getElementById('pf-opmerkingen').value = '';
     document.getElementById('projectFormTitle').textContent = 'Nieuw Project';
   }
@@ -7913,7 +7913,7 @@ function importeerNaarProject() {
   document.getElementById('pf-initContact').value = '';
   document.getElementById('pf-aannemerNaam').value = '';
   document.getElementById('pf-aannemerContact').value = '';
-  document.getElementById('pf-status').value = 'Open';
+  document.getElementById('pf-status').value = 'Nog niet gestart';
   document.getElementById('pf-opmerkingen').value = bestemmingsplan ? 'Bestemmingsplan: ' + bestemmingsplan + (datum ? '\nDatum vergunning: ' + datum : '') : (datum ? 'Datum vergunning: ' + datum : '');
   document.getElementById('projectFormTitle').textContent = 'Nieuw Project (uit vergunning)';
 
