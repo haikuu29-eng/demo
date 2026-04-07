@@ -522,7 +522,23 @@ async function laadBlokvenlaan() {
     const planJson = await planResp.json();
     const plannen = planJson._embedded?.plannen || [];
     if (!plannen.length) throw new Error('Geen geldig bestemmingsplan gevonden voor dit adres');
-    const plan = plannen[0];
+
+    // Selecteer het meest relevante lokale plan:
+    // voorkeur: gemeentelijke overheid > provinciaal, vastgesteld > ontwerp, geen TAM
+    function planScore(p) {
+      let s = 0;
+      const bvgType = (p.beleidsmatigVerantwoordelijkeOverheid?.type || '').toLowerCase();
+      const naam = (p.naam || '').toLowerCase();
+      const status = (p.planstatusInfo?.planstatus || '').toLowerCase();
+      if (bvgType.includes('gemeentelijk')) s += 100;
+      if (bvgType.includes('provinciaal') || bvgType.includes('provincie')) s -= 80;
+      if (naam.includes('tam')) s -= 90;
+      if (naam.includes('provinc') || naam.includes('noord-brabant') || naam.includes('nationaal')) s -= 60;
+      if (status === 'vastgesteld' || status === 'geconsolideerd') s += 40;
+      if (status === 'ontwerp' || status === 'voorontwerp') s -= 50;
+      return s;
+    }
+    const plan = plannen.slice().sort((a, b) => planScore(b) - planScore(a))[0];
     const planId = plan.identificatie || plan.id;
     const planNaam = plan.naam || '—';
     const planStatus = plan.planstatusInfo?.planstatus || plan.status || '—';
