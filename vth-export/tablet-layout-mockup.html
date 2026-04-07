@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmgevingsCheck — Tablet Layout Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #E8EDF2; min-height: 100vh; }
+
+  /* ===== SHELL ===== */
+  .shell {
+    display: grid;
+    grid-template-rows: 56px 1fr;
+    grid-template-columns: 68px 1fr;
+    height: 100vh;
+    max-width: 1024px;
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: 0 0 40px rgba(0,0,0,.18);
+  }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    grid-column: 1 / -1;
+    background: #1B4B6B;
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    gap: 14px;
+    color: #fff;
+  }
+  .topbar-logo {
+    width: 32px; height: 32px;
+    background: #fff;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .topbar-title {
+    font-size: 17px; font-weight: 700; letter-spacing: .3px;
+  }
+  .topbar-subtitle {
+    font-size: 11px; color: rgba(255,255,255,.65); margin-top: 1px;
+  }
+  .topbar-spacer { flex: 1; }
+  .topbar-search {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 20px;
+    padding: 6px 14px 6px 32px;
+    color: #fff; font-size: 13px; width: 220px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,.6)' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+  }
+  .topbar-search::placeholder { color: rgba(255,255,255,.5); }
+  .topbar-avatar {
+    width: 34px; height: 34px;
+    background: #2E7D9A;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+
+  /* ===== LEFT NAV ===== */
+  .sidenav {
+    grid-row: 2;
+    grid-column: 1;
+    background: #1B3A52;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 4px;
+  }
+  .nav-item {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    color: rgba(255,255,255,.5);
+    font-size: 9px; font-weight: 600;
+    transition: all .15s;
+    position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); }
+  .nav-item.active { background: rgba(255,255,255,.15); color: #fff; }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px; bottom: 8px;
+    width: 3px;
+    background: #4FC3F7;
+    border-radius: 0 3px 3px 0;
+  }
+  .nav-icon { font-size: 20px; line-height: 1; }
+  .nav-divider {
+    width: 32px; height: 1px;
+    background: rgba(255,255,255,.1);
+    margin: 6px 0;
+  }
+  .nav-bottom { margin-top: auto; }
+
+  /* ===== MAIN CONTENT ===== */
+  .main {
+    grid-row: 2;
+    grid-column: 2;
+    background: #F4F6F9;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== CONTENT HEADER ===== */
+  .content-header {
+    background: #fff;
+    padding: 14px 20px 0;
+    border-bottom: 1px solid #E0E5EC;
+  }
+  .content-header-row {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  }
+  .content-title { font-size: 18px; font-weight: 700; color: #1B3A52; flex: 1; }
+  .btn-new {
+    background: #1B6B6B; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+  }
+  .filter-row {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px;
+    scrollbar-width: none;
+  }
+  .filter-chip {
+    padding: 5px 13px; border-radius: 99px;
+    border: 1px solid #D0D8E4;
+    font-size: 12px; font-weight: 500; color: #555;
+    cursor: pointer; white-space: nowrap; background: #fff;
+  }
+  .filter-chip.active {
+    background: #1B3A52; color: #fff; border-color: #1B3A52;
+  }
+
+  /* ===== PROJECT CARDS ===== */
+  .cards-area {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-content: start;
+    flex: 1;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #E0E5EC;
+    cursor: pointer;
+    transition: box-shadow .15s;
+  }
+  .card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .card-name { font-size: 14px; font-weight: 700; color: #1B3A52; line-height: 1.3; }
+  .status-chip {
+    font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .chip-nog { background: #F0F0F0; color: #666; }
+  .chip-open { background: #E3F2F2; color: #1B6B6B; }
+  .chip-uitvoering { background: #FFF3E0; color: #E65100; }
+  .chip-opgeleverd { background: #E8F5E9; color: #2E7D32; }
+  .chip-afgehandeld { background: #EDE7F6; color: #512DA8; }
+  .card-meta { font-size: 11px; color: #888; display: flex; flex-direction: column; gap: 3px; }
+  .card-meta span { display: flex; align-items: center; gap: 5px; }
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid #F0F0F0;
+  }
+  .card-controles { font-size: 11px; color: #aaa; }
+  .card-date { font-size: 11px; color: #aaa; }
+
+  /* ===== STAT CARDS ===== */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 16px 16px 0;
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid #E0E5EC;
+    text-align: center;
+  }
+  .stat-value { font-size: 24px; font-weight: 800; color: #1B3A52; line-height: 1; }
+  .stat-label { font-size: 10px; color: #888; margin-top: 3px; font-weight: 500; }
+  .stat-card.highlight { background: #1B3A52; border-color: #1B3A52; }
+  .stat-card.highlight .stat-value { color: #fff; }
+  .stat-card.highlight .stat-label { color: rgba(255,255,255,.6); }
+
+  /* Scrollbar hide */
+  .filter-row::-webkit-scrollbar { display: none; }
+  .main::-webkit-scrollbar { width: 6px; }
+  .main::-webkit-scrollbar-thumb { background: #C8D0DC; border-radius: 3px; }
+
+  /* ===== DEMO NOTE ===== */
+  .demo-note {
+    margin: 16px; padding: 10px 14px;
+    background: #FFF8E1; border-radius: 8px;
+    border-left: 3px solid #FFB300;
+    font-size: 11px; color: #795548;
+  }
+
+  /* ===== DETAIL PANEL (right split - shown in second screen mockup) ===== */
+  .split-demo {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    height: 100%;
+  }
+  .split-list { overflow-y: auto; border-right: 1px solid #E0E5EC; }
+  .split-detail {
+    background: #fff;
+    padding: 0;
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .detail-header {
+    background: #1B3A52;
+    padding: 16px 18px;
+    color: #fff;
+  }
+  .detail-header-title { font-size: 15px; font-weight: 700; }
+  .detail-header-addr { font-size: 12px; color: rgba(255,255,255,.65); margin-top: 2px; }
+  .detail-tabs {
+    display: flex; border-bottom: 1px solid #E0E5EC;
+    background: #F9FAFB;
+  }
+  .detail-tab {
+    flex: 1; text-align: center;
+    padding: 10px 4px; font-size: 11px; font-weight: 600;
+    color: #888; cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  .detail-tab.active { color: #1B3A52; border-color: #1B3A52; }
+  .detail-body { padding: 14px 16px; flex: 1; }
+  .detail-row { display: flex; gap: 8px; margin-bottom: 10px; font-size: 12px; }
+  .detail-label { color: #888; width: 110px; flex-shrink: 0; }
+  .detail-value { color: #222; font-weight: 500; }
+  .controle-item {
+    padding: 10px 12px;
+    background: #F8F9FA;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border-left: 3px solid #1B6B6B;
+  }
+  .controle-soort { font-size: 13px; font-weight: 700; color: #1B3A52; }
+  .controle-meta { font-size: 11px; color: #888; margin-top: 2px; }
+  .controle-item.start-uitv { border-color: #E65100; }
+  .fab {
+    position: sticky; bottom: 16px; left: 0; right: 0;
+    display: flex; justify-content: center;
+    padding: 0 16px 16px;
+    pointer-events: none;
+  }
+  .fab button {
+    pointer-events: all;
+    background: #1B6B6B; color: #fff;
+    border: none; border-radius: 99px;
+    padding: 11px 20px; font-size: 13px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(27,107,107,.4);
+  }
+</style>
+</head>
+<body>
+
+<div style="padding: 20px; background: #E8EDF2; min-height: 100vh;">
+
+  <div style="font-size: 22px; font-weight: 800; color: #1B3A52; margin-bottom: 6px;">OmgevingsCheck — Tablet Layout</div>
+  <div style="font-size: 13px; color: #666; margin-bottom: 24px;">Schermontwerp geoptimaliseerd voor 10-inch tablet (landscape)</div>
+
+  <!-- ===== SCREEN 1: PROJECTLIJST ===== -->
+  <div style="font-size: 13px; font-weight: 700; color: #1B3A52; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .8px;">Scherm 1 — Projectlijst</div>
+
+  <div class="shell" style="height: 620px;">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-logo">🏗️</div>
+      <div>
+        <div class="topbar-title">OmgevingsCheck</div>
+        <div class="topbar-subtitle">Gemeente Waalre · VTH Toezicht</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <input class="topbar-search" placeholder="Zoek project, adres...">
+      <div class="topbar-avatar">CK</div>
+    </div>
+
+    <!-- LEFT NAV -->
+    <div class="sidenav">
+      <div class="nav-item active">
+        <span class="nav-icon">📋</span>
+        <span>Zaken</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">🗺️</span>
+        <span>Kaart</span>
+      </div>
+      <div class="nav-divider"></div>
+      <div class="nav-item">
+        <span class="nav-icon">📄</span>
+        <span>Rapporten</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span>Instellingen</span>
+      </div>
+      <div class="nav-bottom">
+        <div class="nav-item">
+          <span class="nav-icon">↑</span>
+          <span>Sync</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="content-header">
+        <div class="content-header-row">
+          <div class="content-title">Toezichtzaken</div>
+          <button class="btn-new">＋ Nieuw project</button>
+        </div>
+        <div class="filter-row">
+          <div class="filter-chip active">Alle (24)</div>
+          <div class="filter-chip">Bouwvergunning</div>
+          <div class="filter-chip">Melding handhaving</div>
+          <div class="filter-chip">Handhavingsverzoek</div>
+          <div class="filter-chip" style="background:#F0F0F0; color:#555;">Nog niet gestart (5)</div>
+          <div class="filter-chip" style="background:#E3F2F2; color:#1B6B6B;">Open (8)</div>
+          <div class="filter-chip" style="background:#FFF3E0; color:#E65100;">In uitvoering (7)</div>
+          <div class="filter-chip" style="background:#E8F5E9; color:#2E7D32;">Opgeleverd (3)</div>
+          <div class="filter-chip" style="background:#EDE7F6; color:#512DA8;">Afgehandeld (1)</div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card highlight">
+          <div class="stat-value">24</div>
+          <div class="stat-label">Actieve zaken</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:#E65100;">7</div>
+          <div class="stat-label">In uitvoering</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:#1B6B6B;">3</div>
+          <div class="stat-label">Controles deze week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:#C62828;">2</div>
+          <div class="stat-label">Actiepunten open</div>
+        </div>
+      </div>
+
+      <div class="cards-area">
+        <div class="card">
+          <div class="card-top">
+            <div class="card-name">Blokvenlaan 23</div>
+            <span class="status-chip chip-uitvoering">In uitvoering</span>
+          </div>
+          <div class="card-meta">
+            <span>📍 Waalre</span>
+            <span>🏠 Bouwvergunning</span>
+          </div>
+          <div class="card-footer">
+            <span class="card-controles">4 controles</span>
+            <span class="card-date">📅 02-04-2026</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-name">Dorpstraat 7</div>
+            <span class="status-chip chip-nog">Nog niet gestart</span>
+          </div>
+          <div class="card-meta">
+            <span>📍 Waalre</span>
+            <span>🏠 Bouwvergunning</span>
+          </div>
+          <div class="card-footer">
+            <span class="card-controles">0 controles</span>
+            <span class="card-date">—</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-name">Stationsweg 12</div>
+            <span class="status-chip chip-open">Open</span>
+          </div>
+          <div class="card-meta">
+            <span>📍 Aalst</span>
+            <span>⚠️ Melding handhaving</span>
+          </div>
+          <div class="card-footer">
+            <span class="card-controles">1 controle</span>
+            <span class="card-date">📅 28-03-2026</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-name">Valkenswaardseweg 5a</div>
+            <span class="status-chip chip-opgeleverd">Opgeleverd</span>
+          </div>
+          <div class="card-meta">
+            <span>📍 Waalre</span>
+            <span>🏠 Bouwvergunning</span>
+          </div>
+          <div class="card-footer">
+            <span class="card-controles">6 controles</span>
+            <span class="card-date">📅 15-03-2026</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-name">Kerkstraat 18</div>
+            <span class="status-chip chip-uitvoering">In uitvoering</span>
+          </div>
+          <div class="card-meta">
+            <span>📍 Waalre</span>
+            <span>🔨 Handhavingsverzoek</span>
+          </div>
+          <div class="card-footer">
+            <span class="card-controles">2 controles</span>
+            <span class="card-date">📅 01-04-2026</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-name">Eindhovenseweg 42</div>
+            <span class="status-chip chip-nog">Nog niet gestart</span>
+          </div>
+          <div class="card-meta">
+            <span>📍 Waalre</span>
+            <span>🏠 Bouwvergunning</span>
+          </div>
+          <div class="card-footer">
+            <span class="card-controles">0 controles</span>
+            <span class="card-date">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 2: PROJECT DETAIL (split view) ===== -->
+  <div style="font-size: 13px; font-weight: 700; color: #1B3A52; margin: 32px 0 10px; text-transform: uppercase; letter-spacing: .8px;">Scherm 2 — Project Detail (split view)</div>
+
+  <div class="shell" style="height: 620px;">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-logo">🏗️</div>
+      <div>
+        <div class="topbar-title">OmgevingsCheck</div>
+        <div class="topbar-subtitle">Gemeente Waalre · VTH Toezicht</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <input class="topbar-search" placeholder="Zoek project, adres...">
+      <div class="topbar-avatar">CK</div>
+    </div>
+
+    <!-- LEFT NAV -->
+    <div class="sidenav">
+      <div class="nav-item active">
+        <span class="nav-icon">📋</span>
+        <span>Zaken</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">🗺️</span>
+        <span>Kaart</span>
+      </div>
+      <div class="nav-divider"></div>
+      <div class="nav-item">
+        <span class="nav-icon">📄</span>
+        <span>Rapporten</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span>Instellingen</span>
+      </div>
+      <div class="nav-bottom">
+        <div class="nav-item">
+          <span class="nav-icon">↑</span>
+          <span>Sync</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN: split list + detail -->
+    <div class="main" style="overflow: hidden;">
+      <div class="split-demo">
+
+        <!-- LEFT: card list (compact) -->
+        <div class="split-list">
+          <div style="padding: 12px 14px; border-bottom: 1px solid #E0E5EC; background: #fff;">
+            <div style="font-size: 14px; font-weight: 700; color: #1B3A52;">In uitvoering</div>
+          </div>
+          <div style="padding: 10px;">
+            <div class="card" style="border: 2px solid #1B3A52; background: #F0F4F8; margin-bottom: 8px;">
+              <div class="card-top">
+                <div class="card-name" style="font-size: 13px;">Blokvenlaan 23</div>
+                <span class="status-chip chip-uitvoering">In uitvoering</span>
+              </div>
+              <div class="card-meta">
+                <span>📍 Waalre · Bouwvergunning</span>
+              </div>
+            </div>
+            <div class="card" style="margin-bottom: 8px;">
+              <div class="card-top">
+                <div class="card-name" style="font-size: 13px;">Kerkstraat 18</div>
+                <span class="status-chip chip-uitvoering">In uitvoering</span>
+              </div>
+              <div class="card-meta">
+                <span>📍 Waalre · Handhavingsverzoek</span>
+              </div>
+            </div>
+            <div class="card" style="margin-bottom: 8px;">
+              <div class="card-top">
+                <div class="card-name" style="font-size: 13px;">Molenstraat 3</div>
+                <span class="status-chip chip-uitvoering">In uitvoering</span>
+              </div>
+              <div class="card-meta">
+                <span>📍 Aalst · Bouwvergunning</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-top">
+                <div class="card-name" style="font-size: 13px;">Heide 9</div>
+                <span class="status-chip chip-uitvoering">In uitvoering</span>
+              </div>
+              <div class="card-meta">
+                <span>📍 Waalre · Bouwvergunning</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: detail panel -->
+        <div class="split-detail">
+          <div class="detail-header">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+              <div>
+                <div class="detail-header-title">Blokvenlaan 23</div>
+                <div class="detail-header-addr">📍 5373 RG Waalre · Bouwvergunning</div>
+              </div>
+              <span class="status-chip chip-uitvoering" style="margin-top:2px;">In uitvoering</span>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+              <a href="#" style="background:rgba(255,255,255,.15); color:#fff; padding:5px 11px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:600;">📂 Zaaksysteem</a>
+              <a href="#" style="background:rgba(255,255,255,.15); color:#fff; padding:5px 11px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:600;">🗺️ Planregels</a>
+            </div>
+          </div>
+          <div class="detail-tabs">
+            <div class="detail-tab">Basis</div>
+            <div class="detail-tab active">Controles</div>
+            <div class="detail-tab">Foto's</div>
+            <div class="detail-tab">Plannen</div>
+          </div>
+          <div class="detail-body">
+            <div class="controle-item start-uitv">
+              <div class="controle-soort">🏗️ Start uitvoering</div>
+              <div class="controle-meta">10-03-2026 · C. Krielen</div>
+            </div>
+            <div class="controle-item">
+              <div class="controle-soort">Aanloopcontrole</div>
+              <div class="controle-meta">18-03-2026 · C. Krielen · ✅ Akkoord</div>
+            </div>
+            <div class="controle-item">
+              <div class="controle-soort">Tussentijdse controle</div>
+              <div class="controle-meta">28-03-2026 · C. Krielen · ⚠️ Aandachtspunten</div>
+            </div>
+            <div class="controle-item">
+              <div class="controle-soort">Tussentijdse controle</div>
+              <div class="controle-meta">02-04-2026 · C. Krielen · ✅ Akkoord</div>
+            </div>
+          </div>
+          <div class="fab">
+            <button>＋ Nieuwe controle</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size: 12px; color: #888; margin-top: 20px; padding: 12px 16px; background: #fff; border-radius: 8px; border: 1px solid #E0E5EC;">
+    <strong>Layout structuur:</strong>
+    Topbalk (100% breedte) · Linker navigatiebalk (68px, iconen + labels) · Rechts: content grid.
+    Op scherm 2 splitst de content in een smalle lijst (links) + detailpaneel (rechts).
+    Geoptimaliseerd voor 1024×768px landscape tablet.
+  </div>
+
+</div>
+</body>
+</html>
