@@ -330,10 +330,10 @@
     </div>
 
     <!-- MAIN: lijst + vandaag-paneel -->
-    <div class="main" style="overflow:hidden; display:grid; grid-template-columns:1fr 256px;">
+    <div class="main" id="s1-main" style="overflow:hidden; position:relative; display:flex; flex-direction:row;">
 
       <!-- === LINKER DEEL: filter + kaarten === -->
-      <div style="display:flex; flex-direction:column; overflow:hidden; border-right:1px solid #E0E5EC;">
+      <div id="s1-listcol" style="display:flex; flex-direction:column; overflow:hidden; flex:1; min-width:0; margin-right:256px; transition:margin-right .32s cubic-bezier(.4,0,.2,1);">
 
         <!-- Subheader -->
         <div style="background:#fff; padding:12px 16px 0; border-bottom:1px solid #E0E5EC; flex-shrink:0;">
@@ -344,6 +344,9 @@
               <option value="naam">Sorteer: Naam A–Z</option>
               <option value="status">Sorteer: Status</option>
             </select>
+            <button id="s1-vandaag-btn" onclick="s1ToggleVandaag()" title="Vandaag-paneel" style="background:#F0F4F8; border:1px solid #D0D8E4; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:14px; color:#1B3A52; display:flex; align-items:center; gap:5px;">
+              <span>📅</span><span style="font-size:11px; font-weight:600;">Vandaag</span><span id="s1-vandaag-arrow" style="font-size:11px; color:#888;">›</span>
+            </button>
             <button class="btn-new" onclick="alert('Nieuw project formulier')">＋ Nieuw</button>
           </div>
           <!-- Filter chips -->
@@ -367,12 +370,15 @@
       </div>
 
       <!-- === RECHTER PANEEL: Vandaag === -->
-      <div style="background:#fff; overflow-y:auto; display:flex; flex-direction:column;">
+      <div id="s1-vandaag" style="position:absolute; right:0; top:0; bottom:0; width:256px; background:#fff; border-left:1px solid #E0E5EC; overflow-y:auto; display:flex; flex-direction:column; transform:translateX(0); transition:transform .32s cubic-bezier(.4,0,.2,1); box-shadow:-4px 0 16px rgba(0,0,0,.06);">
 
-        <!-- Datum -->
-        <div style="padding:14px 16px 10px; border-bottom:1px solid #F0F4F8;">
-          <div style="font-size:11px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.6px;">Vandaag</div>
-          <div style="font-size:15px; font-weight:700; color:#1B3A52; margin-top:2px;">dinsdag 7 april 2026</div>
+        <!-- Sluit-knop + Datum -->
+        <div style="padding:14px 16px 10px; border-bottom:1px solid #F0F4F8; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; flex-shrink:0;">
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.6px;">Vandaag</div>
+            <div style="font-size:15px; font-weight:700; color:#1B3A52; margin-top:2px;">dinsdag 7 april 2026</div>
+          </div>
+          <button onclick="s1ToggleVandaag()" style="background:none; border:none; cursor:pointer; font-size:18px; color:#aaa; line-height:1; padding:2px 0 0;" title="Sluiten">›</button>
         </div>
 
         <!-- Status-overzicht mini-balk -->
@@ -595,6 +601,31 @@
   }
 
   s1Filter();
+
+  let s1VandaagOpen = true;
+  function s1ToggleVandaag() {
+    s1VandaagOpen = !s1VandaagOpen;
+    const panel   = document.getElementById('s1-vandaag');
+    const listcol = document.getElementById('s1-listcol');
+    const arrow   = document.getElementById('s1-vandaag-arrow');
+    const btn     = document.getElementById('s1-vandaag-btn');
+    const closeBtn = panel.querySelector('button');
+    if (s1VandaagOpen) {
+      panel.style.transform     = 'translateX(0)';
+      listcol.style.marginRight = '256px';
+      arrow.textContent         = '›';
+      btn.style.background      = '#F0F4F8';
+      btn.style.color           = '#1B3A52';
+      btn.style.borderColor     = '#D0D8E4';
+    } else {
+      panel.style.transform     = 'translateX(256px)';
+      listcol.style.marginRight = '0';
+      arrow.textContent         = '‹';
+      btn.style.background      = '#1B3A52';
+      btn.style.color           = '#fff';
+      btn.style.borderColor     = '#1B3A52';
+    }
+  }
   </script>
 
   <!-- ===== SCREEN 2: PROJECT DETAIL (split view) ===== -->
