@@ -352,9 +352,7 @@ html, body { height: 100%; overflow: hidden; }
   padding: 20px 24px;
 }
 
-/* ===== SCREENS ===== */
-.screen { display: none; }
-.screen.active { display: block; }
+/* ===== SCREENS — overridden by tablet CSS above ===== */
 
 /* ===== SEARCH BAR ===== */
 .search-bar {
@@ -1018,8 +1016,8 @@ html, body { height: 100%; overflow: hidden; }
 /* Geselecteerde tekst markering in de PDF viewer */
 #pdfTekstInhoud ::selection { background: #B2DFDB; color: #004D40; }
 
-/* ===== KAART ===== */
-#kaartContainer { height: calc(100vh - 160px); width: 100%; border-radius: var(--radius); overflow: hidden; }
+/* ===== KAART — overridden by tablet CSS ===== */
+#kaartContainer { height: calc(100vh - 56px - 148px); width: 100%; border-radius: 0; overflow: hidden; }
 .view-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
 .view-toggle-btn { flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; color: var(--text-secondary); }
 .view-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -9330,6 +9328,34 @@ function tabletRenderStats() {
   `;
 }
 
+// ===== KAART VIEW OVERRIDE =====
+const _origSetView = setView;
+setView = function(view) {
+  _origSetView(view);
+  const subheader = document.querySelector('#screen-projectList .subheader');
+  const statRow   = document.getElementById('statRow');
+  const listCol   = document.getElementById('listCol');
+  if (view === 'kaart') {
+    if (subheader) subheader.style.display = 'none';
+    if (statRow)   statRow.style.display   = 'none';
+    // kaartContainer fills remainder: 100vh minus topbar (56px)
+    const kc = document.getElementById('kaartContainer');
+    if (kc) kc.style.height = (window.innerHeight - 56) + 'px';
+    if (listCol) { listCol.style.marginRight = '0'; listCol.style.padding = '0'; }
+  } else {
+    if (subheader) subheader.style.display = '';
+    if (statRow)   statRow.style.display   = '';
+    if (listCol) { listCol.style.padding = '12px 16px'; if (_vandaagOpen) listCol.style.marginRight = '260px'; }
+  }
+  if (view === 'kaart') {
+    document.getElementById('nav-kaart').classList.add('active');
+    document.getElementById('nav-zaken').classList.remove('active');
+  } else {
+    document.getElementById('nav-zaken').classList.add('active');
+    document.getElementById('nav-kaart').classList.remove('active');
+  }
+};
+
 // ===== SEARCH from topbar =====
 function tabletSearch() {
   const activeScreen = document.querySelector('.screen.active');
@@ -9355,6 +9381,7 @@ setFilter = function(el, filter) {
   document.querySelectorAll('#filterChips .filter-chip-t').forEach(c => c.classList.remove('active'));
   if (el) el.classList.add('active');
   renderProjectList();
+  if (huidigView === 'kaart') renderKaart();
 };
 
 // Override goBack to use tablet navigation
