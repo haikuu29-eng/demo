@@ -9132,6 +9132,7 @@ function tabletGo(screenId) {
   if (screenId === 'projectList') {
     navigationStack = [];
     showScreen('projectList');
+    if (huidigView === 'kaart') setView('lijst');
     renderProjectList();
   } else if (screenId === 'kaartView') {
     navigationStack = [];
