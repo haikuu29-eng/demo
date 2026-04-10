@@ -1042,6 +1042,9 @@ html, body { height: 100%; overflow: hidden; }
     <button class="icon-btn" onclick="exportData()" title="Backup opslaan">&#128190;</button>
     <button class="icon-btn" onclick="tabletGo('settings')" title="Instellingen">&#9881;</button>
   </div>
+  <span id="syncStatusBadge" title="Synchronisatiestatus"
+    style="display:none; width:30px; height:30px; border-radius:50%;
+           align-items:center; justify-content:center; font-size:15px; flex-shrink:0;"></span>
   <div class="topbar-avatar" id="topbarAvatar">CK</div>
 </header>
 
@@ -1072,6 +1075,9 @@ html, body { height: 100%; overflow: hidden; }
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- SYNC HERVERBIND BANNER -->
+<div id="syncHerverbindBanner" style="display:none; padding:8px 16px; flex-shrink:0; z-index:20;"></div>
 
 <!-- ===== SCREEN: PROJECT LIST ===== -->
 <div class="screen active" id="screen-projectList">
@@ -1593,6 +1599,17 @@ html, body { height: 100%; overflow: hidden; }
         Auto-backup: laden...
       </div>
       <button class="btn btn-secondary btn-block" onclick="herstelAutoBackup()" style="margin-top:8px; font-size:13px;">&#8635; Herstel laatste auto-backup</button>
+    </div>
+
+    <div class="settings-card">
+      <h3>&#128194; OneDrive Synchronisatie</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+        Koppel één JSON-bestand op OneDrive. Tablet en laptop lezen en schrijven altijd naar datzelfde bestand — OneDrive regelt de synchronisatie automatisch.<br>
+        <span style="font-size:12px; color:#888;">Vereist Microsoft Edge of Google Chrome.</span>
+      </p>
+      <div id="syncInstellingen">
+        <div style="color:var(--text-secondary); font-size:13px; padding:8px 0;">Laden...</div>
+      </div>
     </div>
 
     <div class="settings-card">
@@ -9422,9 +9439,311 @@ init = function() {
   if (sub && s.gemeentenaam) sub.textContent = s.gemeentenaam + ' · VTH Toezicht';
   tabletRenderStats();
   tabletRenderVandaag();
+  initBestandSync();
 };
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ===== BESTAND SYNC — File System Access API =====
+
+// --- IndexedDB: opslaan/laden van FileSystemFileHandle ---
+function _openSyncDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('vth-sync', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _opslaanHandle(handle) {
+  const db = await _openSyncDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').put(handle, 'syncBestand');
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function _laadHandle() {
+  const db = await _openSyncDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readonly');
+    const req = tx.objectStore('handles').get('syncBestand');
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _verwijderHandle() {
+  const db = await _openSyncDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').delete('syncBestand');
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// --- State ---
+let syncBestandHandle = null;
+let _syncDebounce = null;
+let _herverbindHandle = null;
+
+// --- Permission helper ---
+async function _checkSyncPermissie(handle, schrijven) {
+  const opts = { mode: schrijven ? 'readwrite' : 'read' };
+  if (await handle.queryPermission(opts) === 'granted') return true;
+  if (await handle.requestPermission(opts) === 'granted') return true;
+  return false;
+}
+
+// --- Verzamel alle app-data in één object ---
+function _getAlleSyncData() {
+  return {
+    version: 2,
+    datum: new Date().toISOString(),
+    projects:  getProjects(),
+    settings:  getSettings(),
+    fotos:     JSON.parse(storage.getItem('vth_fotos')     || '[]'),
+    logo:      storage.getItem('vth_logo')                 || '',
+    sjablonen: JSON.parse(storage.getItem('vth_sjablonen') || 'null')
+  };
+}
+
+// --- Laad data-object terug in storage ---
+function _laadSyncDataIn(data) {
+  if (!data || typeof data !== 'object') return;
+  if (data.projects  !== undefined) storage.setItem('vth_projects',  JSON.stringify(data.projects));
+  if (data.settings  !== undefined) storage.setItem('vth_settings',  JSON.stringify(data.settings));
+  if (data.fotos     !== undefined) storage.setItem('vth_fotos',     JSON.stringify(data.fotos));
+  if (data.logo      !== undefined) storage.setItem('vth_logo',      data.logo);
+  if (data.sjablonen !== undefined) storage.setItem('vth_sjablonen', JSON.stringify(data.sjablonen));
+}
+
+// --- Schrijf naar bestand ---
+async function _schrijfSyncBestand() {
+  if (!syncBestandHandle) return;
+  try {
+    const ok = await _checkSyncPermissie(syncBestandHandle, true);
+    if (!ok) { _setSyncStatus('fout'); return; }
+    const writable = await syncBestandHandle.createWritable();
+    await writable.write(JSON.stringify(_getAlleSyncData(), null, 2));
+    await writable.close();
+    _setSyncStatus('gekoppeld');
+  } catch(e) {
+    console.warn('Sync schrijffout:', e);
+    _setSyncStatus('fout');
+  }
+}
+
+// --- Lees van bestand ---
+async function leesVanSyncBestand() {
+  if (!syncBestandHandle) return false;
+  try {
+    const ok = await _checkSyncPermissie(syncBestandHandle, false);
+    if (!ok) { _setSyncStatus('fout'); return false; }
+    const file = await syncBestandHandle.getFile();
+    const data = JSON.parse(await file.text());
+    _laadSyncDataIn(data);
+    _setSyncStatus('gekoppeld');
+    return true;
+  } catch(e) {
+    console.warn('Sync leesfout:', e);
+    _setSyncStatus('fout');
+    return false;
+  }
+}
+
+// --- Debounced trigger na elke opslag ---
+function triggerSync() {
+  if (!syncBestandHandle) return;
+  clearTimeout(_syncDebounce);
+  _setSyncStatus('bezig');
+  _syncDebounce = setTimeout(_schrijfSyncBestand, 900);
+}
+
+// --- Status badge bijwerken ---
+function _setSyncStatus(status) {
+  const badge = document.getElementById('syncStatusBadge');
+  if (!badge) return;
+  const cfg = {
+    geen:     { icon: '',   bg: 'transparent',  display: 'none'  },
+    gekoppeld:{ icon: '🔗', bg: '#2E7D32',       display: 'flex'  },
+    bezig:    { icon: '💾', bg: '#E65100',       display: 'flex'  },
+    fout:     { icon: '⚠️', bg: '#C62828',       display: 'flex'  }
+  };
+  const s = cfg[status] || cfg.geen;
+  badge.textContent = s.icon;
+  badge.style.background = s.bg;
+  badge.style.display = s.display;
+  badge.title = {
+    geen: 'Geen sync-bestand gekoppeld',
+    gekoppeld: 'Gesynchroniseerd — ' + (syncBestandHandle ? syncBestandHandle.name : ''),
+    bezig: 'Bezig met opslaan naar bestand...',
+    fout: 'Synchronisatiefout — controleer bestandstoegang in Instellingen'
+  }[status] || '';
+}
+
+// --- Settings UI bijwerken ---
+function updateSyncInstellingen() {
+  const el = document.getElementById('syncInstellingen');
+  if (!el) return;
+  const ondersteund = !!window.showOpenFilePicker;
+  if (!ondersteund) {
+    el.innerHTML = `<div style="padding:10px 12px; background:#FFF3E0; border-radius:8px; border:1px solid #FFCC80; font-size:13px; color:#E65100;">
+      ⚠️ Uw browser ondersteunt de File System API niet. Gebruik <strong>Microsoft Edge</strong> of <strong>Google Chrome</strong>.
+    </div>`;
+    return;
+  }
+  if (syncBestandHandle) {
+    el.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:#E8F5E9; border-radius:8px; border:1px solid #A5D6A7; margin-bottom:12px;">
+        <span style="font-size:20px;">🔗</span>
+        <div>
+          <div style="font-size:13px; font-weight:700; color:#2E7D32;">Gekoppeld</div>
+          <div style="font-size:12px; color:#555;">${escapeHtml(syncBestandHandle.name)}</div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-block" onclick="herlaadVanSyncBestand()" style="margin-bottom:8px; font-size:13px;">↻ Data nu opnieuw inlezen</button>
+      <button class="btn btn-danger btn-block" onclick="ontkoppelSyncBestand()" style="font-size:13px;">Ontkoppelen</button>`;
+  } else {
+    el.innerHTML = `
+      <div style="padding:10px 12px; background:#F5F5F5; border-radius:8px; border:1px solid #E0E0E0; margin-bottom:12px; font-size:13px; color:#616161;">
+        Geen bestand gekoppeld — data wordt alleen lokaal opgeslagen.
+      </div>
+      <button class="btn btn-primary btn-block" onclick="koppelBestaandSyncBestand()" style="margin-bottom:8px;">🔗 Koppel bestaand bestand</button>
+      <button class="btn btn-secondary btn-block" onclick="maakNieuwSyncBestand()">＋ Nieuw sync-bestand aanmaken</button>`;
+  }
+}
+
+// --- Herverbind-banner (na browserherstart) ---
+function _toonHerverbindBanner(handle) {
+  const banner = document.getElementById('syncHerverbindBanner');
+  if (!banner) return;
+  _herverbindHandle = handle;
+  banner.style.display = '';
+  banner.innerHTML = `<div style="background:#E3F2FD; border:1px solid #90CAF9; border-radius:8px; padding:10px 16px; margin:0 0 8px; display:flex; align-items:center; gap:12px;">
+    <span style="font-size:20px;">🔗</span>
+    <div style="flex:1; font-size:13px; color:#1565C0;">
+      <strong>Sync-bestand beschikbaar:</strong> ${escapeHtml(handle.name)}<br>
+      <span style="font-size:12px;">Klik om te verbinden en de laatste data te laden.</span>
+    </div>
+    <button class="btn btn-primary" onclick="herverbindSyncBestand()" style="font-size:12px; padding:7px 14px; white-space:nowrap;">Verbinden</button>
+    <button onclick="document.getElementById('syncHerverbindBanner').style.display='none'" style="background:none; border:none; font-size:18px; cursor:pointer; color:#888; padding:0 0 0 4px;">✕</button>
+  </div>`;
+}
+
+// --- Acties ---
+async function koppelBestaandSyncBestand() {
+  if (!window.showOpenFilePicker) return;
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'OmgevingsCheck data', accept: { 'application/json': ['.json'] } }],
+      multiple: false
+    });
+    syncBestandHandle = handle;
+    await _opslaanHandle(handle);
+    const ok = await leesVanSyncBestand();
+    if (ok) { renderProjectList(); loadSettings(); showToast('Bestand gekoppeld en data geladen ✓'); }
+    updateSyncInstellingen();
+  } catch(e) { if (e.name !== 'AbortError') showToast('Fout: ' + e.message); }
+}
+
+async function maakNieuwSyncBestand() {
+  if (!window.showSaveFilePicker) return;
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: 'omgevingscheck-data.json',
+      types: [{ description: 'OmgevingsCheck data', accept: { 'application/json': ['.json'] } }]
+    });
+    syncBestandHandle = handle;
+    await _opslaanHandle(handle);
+    await _schrijfSyncBestand();
+    showToast('Sync-bestand aangemaakt en gekoppeld ✓');
+    updateSyncInstellingen();
+  } catch(e) { if (e.name !== 'AbortError') showToast('Fout: ' + e.message); }
+}
+
+async function herverbindSyncBestand() {
+  if (!_herverbindHandle) return;
+  try {
+    const ok = await _checkSyncPermissie(_herverbindHandle, true);
+    if (ok) {
+      syncBestandHandle = _herverbindHandle;
+      _herverbindHandle = null;
+      const geladen = await leesVanSyncBestand();
+      if (geladen) { renderProjectList(); loadSettings(); showToast('Verbonden en data ingeladen ✓'); }
+      const banner = document.getElementById('syncHerverbindBanner');
+      if (banner) banner.style.display = 'none';
+      updateSyncInstellingen();
+    } else {
+      showToast('Toegang geweigerd door browser');
+    }
+  } catch(e) { showToast('Fout bij verbinden: ' + e.message); }
+}
+
+async function herlaadVanSyncBestand() {
+  const ok = await leesVanSyncBestand();
+  if (ok) { renderProjectList(); loadSettings(); showToast('Data herladen van bestand ✓'); }
+  else showToast('Kan bestand niet lezen — controleer toegang');
+}
+
+async function ontkoppelSyncBestand() {
+  if (!confirm('Ontkoppelen? Data blijft bewaard in de browser, maar wordt niet meer gesynchroniseerd.')) return;
+  syncBestandHandle = null;
+  await _verwijderHandle();
+  _setSyncStatus('geen');
+  updateSyncInstellingen();
+  showToast('Sync-bestand ontkoppeld');
+}
+
+// --- Startup ---
+async function initBestandSync() {
+  try {
+    const handle = await _laadHandle();
+    if (!handle) { updateSyncInstellingen(); return; }
+    // Controleer of permissie al geldig is (zelfde browser-sessie)
+    const staat = await handle.queryPermission({ mode: 'readwrite' });
+    if (staat === 'granted') {
+      syncBestandHandle = handle;
+      const ok = await leesVanSyncBestand();
+      if (ok) { renderProjectList(); loadSettings(); }
+    } else {
+      // Toon banner voor herverbinding (vereist gebruikersgebaar)
+      _toonHerverbindBanner(handle);
+    }
+    updateSyncInstellingen();
+  } catch(e) {
+    console.warn('initBestandSync:', e);
+    updateSyncInstellingen();
+  }
+}
+
+// --- Override save-functies om sync te triggeren ---
+const _origSaveProjectsSync = saveProjects;
+saveProjects = function(projects) {
+  _origSaveProjectsSync(projects);
+  triggerSync();
+};
+const _origSaveSettingsDataSync = saveSettingsData;
+saveSettingsData = function(settings) {
+  _origSaveSettingsDataSync(settings);
+  triggerSync();
+};
+const _origSaveSjablonenSync = saveSjablonen;
+saveSjablonen = function(sjablonen) {
+  _origSaveSjablonenSync(sjablonen);
+  triggerSync();
+};
+const _origSaveFotoSync = saveFoto;
+saveFoto = function(foto) {
+  _origSaveFotoSync(foto);
+  triggerSync();
+};
+const _origDeleteFotoSync = deleteFoto;
+deleteFoto = function(fotoId) {
+  _origDeleteFotoSync(fotoId);
+  triggerSync();
+};
 
 // ===== IN-TAB CONTROLE NAVIGATIE =====
 
