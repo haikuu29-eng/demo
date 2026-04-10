@@ -18,6 +18,7 @@
 <meta name="viewport" content="width=1024, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>OmgevingsCheck</title>
@@ -1608,6 +1609,17 @@ html, body { height: 100%; overflow: hidden; }
         <span style="font-size:12px; color:#888;">Vereist Microsoft Edge of Google Chrome.</span>
       </p>
       <div id="syncInstellingen">
+        <div style="color:var(--text-secondary); font-size:13px; padding:8px 0;">Laden...</div>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <h3>&#128193; Rapportenmap (OneDrive)</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+        Kies een map op OneDrive. Bij elke "Genereer Rapport" worden automatisch een HTML- én PDF-versie opgeslagen in een submap per zaak:<br>
+        <span style="font-size:12px; font-family:monospace; color:#1B3A52;">Rapportenmap \ Z-2026-001 — Kerkstraat 1 \ Eindcontrole 2026-04-10.pdf</span>
+      </p>
+      <div id="rapportenMapInstellingen">
         <div style="color:var(--text-secondary); font-size:13px; padding:8px 0;">Laden...</div>
       </div>
     </div>
@@ -9440,6 +9452,7 @@ init = function() {
   tabletRenderStats();
   tabletRenderVandaag();
   initBestandSync();
+  initRapportenMap();
 };
 
 document.addEventListener('DOMContentLoaded', init);
@@ -9744,6 +9757,248 @@ deleteFoto = function(fotoId) {
   _origDeleteFotoSync(fotoId);
   triggerSync();
 };
+
+// ===== RAPPORTENMAP — automatisch HTML + PDF opslaan per zaak =====
+
+let rapportenMapHandle = null;
+
+// --- IndexedDB helpers (hergebruikt van sync-module) ---
+async function _laadRapportenMapHandle() {
+  const db = await _openSyncDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readonly');
+    const req = tx.objectStore('handles').get('rapportenMap');
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _opslaanRapportenMapHandle(handle) {
+  const db = await _openSyncDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').put(handle, 'rapportenMap');
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function _verwijderRapportenMapHandle() {
+  const db = await _openSyncDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').delete('rapportenMap');
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// --- Helpers voor mapnamen ---
+function _saniteerNaam(naam) {
+  return (naam || 'Onbekend')
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .trim()
+    .substring(0, 200);
+}
+function _zaakMapNaam(p) {
+  const delen = [];
+  if (p.zaaknummer) delen.push(p.zaaknummer);
+  if (p.naam)       delen.push(p.naam);
+  return _saniteerNaam(delen.join(' \u2014 ') || 'Onbekende zaak');
+}
+function _controleBestandsnaam(c) {
+  return _saniteerNaam([c.soort, c.datum].filter(Boolean).join(' ') || 'Controle');
+}
+
+// --- Bouw volledig standalone HTML-document ---
+function _bouwStandaloneHtml(project, controle) {
+  const gemeente = getSettings().gemeentenaam || 'Gemeente';
+  const titel = escapeHtml(
+    [project.zaaknummer || project.naam, controle.soort, controle.datum]
+      .filter(Boolean).join(' \u2014 ')
+  );
+  // Gebruik de inhoud van printArea (al opgebouwd door buildPrintArea)
+  const inhoud = document.getElementById('printArea').innerHTML || '';
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>${titel}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         font-size: 11pt; color: #212121; line-height: 1.5; margin: 18mm; background:#fff; }
+  h1   { font-size: 18pt; color: #1B6B6B; margin: 0 0 4px; }
+  h2   { font-size: 14pt; color: #424242; font-weight: 400; margin: 0; }
+  h3   { font-size: 12pt; color: #1B6B6B; border-bottom: 1px solid #E0E0E0;
+         padding-bottom: 4px; margin: 20px 0 10px; }
+  h4   { font-size: 11pt; margin: 0 0 4px; }
+  img  { max-width: 100%; }
+  .print-header { display: flex; justify-content: space-between; align-items: flex-start;
+                  border-bottom: 3px solid #1B6B6B; padding-bottom: 12px; margin-bottom: 16px; }
+  .print-date   { font-size: 10pt; color: #757575; margin-top: 6px; }
+  .print-result-banner { text-align: center; padding: 12px; font-size: 16pt; font-weight: 700;
+                         border-radius: 8px; margin: 16px 0; }
+  .print-result-banner.akkoord      { background: #E8F5E9; color: #2E7D32; border: 2px solid #2E7D32; }
+  .print-result-banner.akkoord-mits { background: #FFF8E1; color: #F57F17; border: 2px solid #F57F17; }
+  .print-result-banner.niet-akkoord { background: #FFEBEE; color: #C62828; border: 2px solid #C62828; }
+  .print-result-banner.geen         { background: #F5F5F5; color: #757575; border: 2px solid #BDBDBD; }
+  .print-table  { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .print-table th, .print-table td { border: 1px solid #E0E0E0; padding: 6px 10px;
+                                     font-size: 10pt; text-align: left; }
+  .print-table th { background: #F5F5F5; font-weight: 600; width: 35%; }
+  .print-section { margin-bottom: 20px; }
+  .print-onderwerp { border: 1px solid #E0E0E0; border-radius: 6px; padding: 12px;
+                     margin-bottom: 10px; page-break-inside: avoid; }
+  .print-onderwerp.akkoord      { border-left: 5px solid #2E7D32; }
+  .print-onderwerp.akkoord-mits { border-left: 5px solid #F57F17; }
+  .print-onderwerp.niet-akkoord { border-left: 5px solid #C62828; }
+  .result-label                 { display: inline-block; padding: 2px 8px; border-radius: 4px;
+                                  font-size: 9pt; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .result-label.akkoord         { background: #2E7D32; }
+  .result-label.akkoord-mits    { background: #F57F17; }
+  .result-label.niet-akkoord    { background: #C62828; }
+  .print-footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #E0E0E0;
+                  font-size: 9pt; color: #757575; text-align: center; }
+</style>
+</head>
+<body>${inhoud}</body>
+</html>`;
+}
+
+// --- Daadwerkelijk opslaan ---
+async function _slaRapportOp(project, controle) {
+  if (!rapportenMapHandle) return;
+  try {
+    // Permissie controleren / opvragen
+    const staat = await rapportenMapHandle.queryPermission({ mode: 'readwrite' });
+    if (staat !== 'granted') {
+      const nieuw = await rapportenMapHandle.requestPermission({ mode: 'readwrite' });
+      if (nieuw !== 'granted') { showToast('Geen toegang tot rapportenmap'); return; }
+    }
+
+    const zaakMap    = await rapportenMapHandle.getDirectoryHandle(_zaakMapNaam(project), { create: true });
+    const basisNaam  = _controleBestandsnaam(controle);
+    const htmlDoc    = _bouwStandaloneHtml(project, controle);
+
+    // HTML opslaan
+    const htmlH = await zaakMap.getFileHandle(basisNaam + '.html', { create: true });
+    const htmlW = await htmlH.createWritable();
+    await htmlW.write(htmlDoc);
+    await htmlW.close();
+
+    // PDF opslaan via html2pdf.js
+    if (window.html2pdf) {
+      // Clone printArea zodat CSS-klassen correct worden meegenomen
+      const bron = document.getElementById('printArea');
+      const kloon = bron.cloneNode(true);
+      kloon.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:#fff;display:block;';
+      document.body.appendChild(kloon);
+
+      try {
+        const blob = await html2pdf()
+          .set({
+            margin:     [12, 12, 12, 12],
+            filename:   basisNaam + '.pdf',
+            image:      { type: 'jpeg', quality: 0.92 },
+            html2canvas:{ scale: 2, useCORS: true, logging: false },
+            jsPDF:      { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          })
+          .from(kloon)
+          .outputPdf('blob');
+
+        document.body.removeChild(kloon);
+
+        const pdfH = await zaakMap.getFileHandle(basisNaam + '.pdf', { create: true });
+        const pdfW = await pdfH.createWritable();
+        await pdfW.write(blob);
+        await pdfW.close();
+
+        showToast('HTML + PDF opgeslagen in OneDrive \u2713');
+      } catch (pdfFout) {
+        if (document.body.contains(kloon)) document.body.removeChild(kloon);
+        console.warn('PDF genereren mislukt:', pdfFout);
+        showToast('HTML opgeslagen \u2713  (PDF overgeslagen — herlaad pagina voor PDF)');
+      }
+    } else {
+      showToast('HTML opgeslagen in OneDrive \u2713  (laad pagina opnieuw voor PDF-ondersteuning)');
+    }
+  } catch (e) {
+    console.warn('Rapport opslaan mislukt:', e);
+    showToast('Fout bij opslaan rapport: ' + e.message);
+  }
+}
+
+// --- Override generateReport ---
+const _origGenerateReport = generateReport;
+generateReport = function() {
+  _origGenerateReport();
+  if (rapportenMapHandle) {
+    const p = getProjects().find(x => x.id === currentProjectId);
+    const c = p ? (p.controles || []).find(x => x.id === currentControleId) : null;
+    if (p && c) _slaRapportOp(p, c);
+  }
+};
+
+// --- Settings UI ---
+function updateRapportenMapInstellingen() {
+  const el = document.getElementById('rapportenMapInstellingen');
+  if (!el) return;
+  if (!window.showDirectoryPicker) {
+    el.innerHTML = `<div style="padding:10px 12px; background:#FFF3E0; border-radius:8px;
+      border:1px solid #FFCC80; font-size:13px; color:#E65100;">
+      \u26a0\ufe0f Gebruik Microsoft Edge of Google Chrome voor deze functie.</div>`;
+    return;
+  }
+  if (rapportenMapHandle) {
+    el.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px;
+                  background:#E8F5E9; border-radius:8px; border:1px solid #A5D6A7; margin-bottom:12px;">
+        <span style="font-size:20px;">&#128193;</span>
+        <div>
+          <div style="font-size:13px; font-weight:700; color:#2E7D32;">Gekoppeld</div>
+          <div style="font-size:12px; color:#555;">${escapeHtml(rapportenMapHandle.name)}</div>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-block" onclick="ontkoppelRapportenMap()" style="font-size:13px;">Ontkoppelen</button>`;
+  } else {
+    el.innerHTML = `
+      <div style="padding:10px 12px; background:#F5F5F5; border-radius:8px;
+                  border:1px solid #E0E0E0; margin-bottom:12px; font-size:13px; color:#616161;">
+        Geen map gekoppeld &mdash; rapporten worden niet automatisch opgeslagen.
+      </div>
+      <button class="btn btn-primary btn-block" onclick="kiesRapportenMap()">&#128193; Map kiezen op OneDrive</button>`;
+  }
+}
+
+async function kiesRapportenMap() {
+  if (!window.showDirectoryPicker) return;
+  try {
+    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    rapportenMapHandle = handle;
+    await _opslaanRapportenMapHandle(handle);
+    updateRapportenMapInstellingen();
+    showToast('Rapportenmap gekoppeld \u2713');
+  } catch(e) { if (e.name !== 'AbortError') showToast('Fout: ' + e.message); }
+}
+
+async function ontkoppelRapportenMap() {
+  if (!confirm('Rapportenmap ontkoppelen? Bestaande bestanden blijven onaangeroerd.')) return;
+  rapportenMapHandle = null;
+  await _verwijderRapportenMapHandle();
+  updateRapportenMapInstellingen();
+  showToast('Rapportenmap ontkoppeld');
+}
+
+// --- Startup ---
+async function initRapportenMap() {
+  try {
+    const handle = await _laadRapportenMapHandle();
+    if (!handle) { updateRapportenMapInstellingen(); return; }
+    const staat = await handle.queryPermission({ mode: 'readwrite' });
+    if (staat === 'granted') rapportenMapHandle = handle;
+    // Anders: permissie wordt gevraagd bij de eerste rapportgeneratie
+    updateRapportenMapInstellingen();
+  } catch(e) { updateRapportenMapInstellingen(); }
+}
 
 // ===== IN-TAB CONTROLE NAVIGATIE =====
 
