@@ -1377,8 +1377,8 @@ html, body { height: 100%; overflow: hidden; }
 <div class="screen" id="screen-projectDetail">
   <div class="split-shell">
 
-    <!-- LEFT: compact project list -->
-    <div class="split-list-col">
+    <!-- LEFT: compact project list (hidden — navigation via tab bar within case) -->
+    <div class="split-list-col" style="display:none;">
       <div class="split-list-header">
         <button onclick="tabletGo('projectList')" style="background:none;border:none;cursor:pointer;font-size:18px;color:#1B3A52;padding:0;">‹</button>
         <span>Toezichtzaken</span>
@@ -1391,6 +1391,9 @@ html, body { height: 100%; overflow: hidden; }
 
       <!-- Detail header -->
       <div class="detail-header-bar" id="detailHeaderBar">
+        <div style="margin-bottom:8px;">
+          <button onclick="tabletGo('projectList')" style="background:rgba(255,255,255,.15); border:none; color:#fff; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px;">‹ Terug naar overzicht</button>
+        </div>
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
           <div style="min-width:0;">
             <div class="dh-title" id="dh-title">—</div>
@@ -1422,9 +1425,109 @@ html, body { height: 100%; overflow: hidden; }
           </div>
         </div>
         <div id="tab-controles" style="display:none;">
-          <button class="btn btn-primary btn-block" onclick="openControleForm()" style="margin-bottom:16px;">+ Nieuwe Controle</button>
-          <div id="controleList"></div>
+          <!-- Sub-view: lijst -->
+          <div id="cv-list">
+            <button class="btn btn-primary btn-block" onclick="openControleForm()" style="margin-bottom:16px;">+ Nieuwe Controle</button>
+            <div id="controleList"></div>
+          </div>
+
+          <!-- Sub-view: controle formulier -->
+          <div id="cv-form" style="display:none;">
+            <div style="display:flex; align-items:center; gap:10px; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid #E0E5EC;">
+              <button class="btn btn-secondary" onclick="showControleSubView('list')" style="padding:7px 14px; font-size:13px;">‹ Controles</button>
+              <h3 id="controleFormTitle" style="font-size:16px; font-weight:700; color:var(--primary); margin:0;">Nieuwe Controle</h3>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Datum *</label>
+                <input type="date" id="cf-datum">
+              </div>
+              <div class="form-group">
+                <label>Tijd</label>
+                <input type="time" id="cf-tijd">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Soort controle *</label>
+              <select id="cf-soort" onchange="pasControleFormAan(this.value)">
+                <option value="">-- Selecteer --</option>
+                <option>Start uitvoering</option>
+                <option>Aanloopcontrole</option>
+                <option>Tussentijdse controle</option>
+                <option>Eindcontrole</option>
+                <option>Controle n.a.v. melding</option>
+                <option>Hercontrole</option>
+                <option>Handhavingscontrole</option>
+              </select>
+            </div>
+            <div id="cf-startBlok" style="display:none; background:#FFF8F2; border:1px solid #FFD0A0; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+              <div style="font-size:13px; font-weight:600; color:#E65100; margin-bottom:4px;">🏗️ Start uitvoering registreren</div>
+              <div style="font-size:12px; color:var(--text-secondary);">Registreer datum en toezichthouder. Er is geen controleresultaat vereist.</div>
+            </div>
+            <div class="form-group">
+              <label>Toezichthouder(s)</label>
+              <input type="text" id="cf-toezichthouder" placeholder="Naam toezichthouder(s)">
+            </div>
+            <div class="form-group">
+              <label>Aanwezigheid betrokkenen</label>
+              <input type="text" id="cf-aanwezigen" placeholder="Wie waren aanwezig?">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Meldingsnummer (optioneel)</label>
+                <input type="text" id="cf-meldingsnummer" placeholder="Meldingsnummer">
+              </div>
+              <div class="form-group">
+                <label>Klachtomschrijving (optioneel)</label>
+                <input type="text" id="cf-klacht" placeholder="Korte omschrijving klacht">
+              </div>
+            </div>
+            <div class="form-section-title" id="cf-onderwerpTitel">Onderwerpen</div>
+            <div id="sjabloonKiesRij" style="margin-bottom:10px;">
+              <button type="button" class="btn btn-secondary btn-block" onclick="openSjabloonKiezer()" style="border-style:dashed; font-size:13px;">
+                📋 Sjabloon toepassen
+              </button>
+            </div>
+            <div id="onderwerpCards"></div>
+            <button class="btn btn-secondary btn-block" onclick="openOnderwerpModal()" style="margin-bottom:20px;">+ Onderwerp toevoegen</button>
+            <div class="form-section-title" id="cf-resultaatTitel">Algemeen Controleresultaat</div>
+            <div class="result-buttons" id="algemeenResultaat">
+              <button class="result-btn akkoord" onclick="setAlgemeenResultaat('akkoord', this)">AKKOORD</button>
+              <button class="result-btn akkoord-mits" onclick="setAlgemeenResultaat('akkoord-mits', this)">AKKOORD MITS AANPASSINGEN</button>
+              <button class="result-btn niet-akkoord" onclick="setAlgemeenResultaat('niet-akkoord', this)">NIET AKKOORD</button>
+            </div>
+            <div class="form-group" style="margin-top:16px;">
+              <label>Samenvatting bevindingen</label>
+              <textarea id="cf-samenvatting" placeholder="Samenvatting van de bevindingen..."></textarea>
+            </div>
+            <div id="cf-adviesBlok">
+              <div class="form-group">
+                <label>Advies richting aannemer</label>
+                <textarea id="cf-adviesAannemer" placeholder="Advies en aanbevelingen richting aannemer..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Advies richting handhaving</label>
+                <textarea id="cf-adviesHandhaving" placeholder="Advies richting handhaving..."></textarea>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg" onclick="saveControle()">Controle Opslaan</button>
+          </div>
+
+          <!-- Sub-view: controle detail -->
+          <div id="cv-detail" style="display:none;">
+            <div style="display:flex; align-items:center; gap:10px; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid #E0E5EC;">
+              <button class="btn btn-secondary" onclick="showControleSubView('list')" style="padding:7px 14px; font-size:13px;">‹ Controles</button>
+            </div>
+            <div id="controleDetailContent"></div>
+            <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="generateReport()" style="flex:1; min-width:200px;">&#128196; Genereer Rapport</button>
+              <button class="btn btn-secondary" onclick="mailRapport()" style="flex:1; min-width:200px;">&#128231; Mailen</button>
+              <button class="btn btn-secondary" onclick="openControleForm(currentControleId)" style="flex:1; min-width:150px;">Bewerken</button>
+              <button class="btn btn-danger" onclick="deleteControle(currentControleId)" style="flex:1; min-width:150px;">Verwijderen</button>
+            </div>
+          </div>
         </div>
+
         <div id="tab-voortgang" style="display:none;"></div>
       </div>
 
@@ -1432,111 +1535,11 @@ html, body { height: 100%; overflow: hidden; }
   </div><!-- /split-shell -->
 </div>
 
-<!-- ===== SCREEN: CONTROLE FORM ===== -->
-<div class="screen" id="screen-controleForm" style="overflow-y:auto;">
-  <div class="main-content" style="max-width:720px; margin:0 auto;">
-    <div class="settings-card">
-      <h3 id="controleFormTitle">Nieuwe Controle</h3>
+<!-- ===== SCREEN: CONTROLE FORM (leeg — form is verplaatst naar tab-controles > cv-form) ===== -->
+<div class="screen" id="screen-controleForm" style="display:none;"></div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Datum *</label>
-          <input type="date" id="cf-datum">
-        </div>
-        <div class="form-group">
-          <label>Tijd</label>
-          <input type="time" id="cf-tijd">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Soort controle *</label>
-        <select id="cf-soort" onchange="pasControleFormAan(this.value)">
-          <option value="">-- Selecteer --</option>
-          <option>Start uitvoering</option>
-          <option>Aanloopcontrole</option>
-          <option>Tussentijdse controle</option>
-          <option>Eindcontrole</option>
-          <option>Controle n.a.v. melding</option>
-          <option>Hercontrole</option>
-          <option>Handhavingscontrole</option>
-        </select>
-      </div>
-
-      <!-- Alleen zichtbaar bij Start uitvoering -->
-      <div id="cf-startBlok" style="display:none; background:#FFF8F2; border:1px solid #FFD0A0; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
-        <div style="font-size:13px; font-weight:600; color:#E65100; margin-bottom:4px;">🏗️ Start uitvoering registreren</div>
-        <div style="font-size:12px; color:var(--text-secondary);">Registreer datum en toezichthouder. Er is geen controleresultaat vereist.</div>
-      </div>
-
-      <div class="form-group">
-        <label>Toezichthouder(s)</label>
-        <input type="text" id="cf-toezichthouder" placeholder="Naam toezichthouder(s)">
-      </div>
-      <div class="form-group">
-        <label>Aanwezigheid betrokkenen</label>
-        <input type="text" id="cf-aanwezigen" placeholder="Wie waren aanwezig?">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Meldingsnummer (optioneel)</label>
-          <input type="text" id="cf-meldingsnummer" placeholder="Meldingsnummer">
-        </div>
-        <div class="form-group">
-          <label>Klachtomschrijving (optioneel)</label>
-          <input type="text" id="cf-klacht" placeholder="Korte omschrijving klacht">
-        </div>
-      </div>
-
-      <div class="form-section-title" id="cf-onderwerpTitel">Onderwerpen</div>
-      <div id="sjabloonKiesRij" style="margin-bottom:10px;">
-        <button type="button" class="btn btn-secondary btn-block" onclick="openSjabloonKiezer()"
-          style="border-style:dashed; font-size:13px;">
-          📋 Sjabloon toepassen
-        </button>
-      </div>
-      <div id="onderwerpCards"></div>
-      <button class="btn btn-secondary btn-block" onclick="openOnderwerpModal()" style="margin-bottom: 20px;">+ Onderwerp toevoegen</button>
-
-      <div class="form-section-title" id="cf-resultaatTitel">Algemeen Controleresultaat</div>
-      <div class="result-buttons" id="algemeenResultaat">
-        <button class="result-btn akkoord" onclick="setAlgemeenResultaat('akkoord', this)">AKKOORD</button>
-        <button class="result-btn akkoord-mits" onclick="setAlgemeenResultaat('akkoord-mits', this)">AKKOORD MITS AANPASSINGEN</button>
-        <button class="result-btn niet-akkoord" onclick="setAlgemeenResultaat('niet-akkoord', this)">NIET AKKOORD</button>
-      </div>
-
-      <div class="form-group" style="margin-top: 16px;">
-        <label>Samenvatting bevindingen</label>
-        <textarea id="cf-samenvatting" placeholder="Samenvatting van de bevindingen..."></textarea>
-      </div>
-      <div id="cf-adviesBlok">
-        <div class="form-group">
-          <label>Advies richting aannemer</label>
-          <textarea id="cf-adviesAannemer" placeholder="Advies en aanbevelingen richting aannemer..."></textarea>
-        </div>
-        <div class="form-group">
-          <label>Advies richting handhaving</label>
-          <textarea id="cf-adviesHandhaving" placeholder="Advies richting handhaving..."></textarea>
-        </div>
-      </div>
-
-      <button class="btn btn-primary btn-block btn-lg" onclick="saveControle()">Controle Opslaan</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== SCREEN: CONTROLE DETAIL ===== -->
-<div class="screen" id="screen-controleDetail" style="overflow-y:auto;">
-  <div class="main-content" style="max-width:720px; margin:0 auto;">
-    <div id="controleDetailContent"></div>
-    <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
-      <button class="btn btn-primary" onclick="generateReport()" style="flex:1; min-width: 200px;">&#128196; Genereer Rapport</button>
-      <button class="btn btn-secondary" onclick="mailRapport()" style="flex:1; min-width: 200px;">&#128231; Mailen</button>
-      <button class="btn btn-secondary" onclick="openControleForm(currentControleId)" style="flex:1; min-width: 150px;">Bewerken</button>
-      <button class="btn btn-danger" onclick="deleteControle(currentControleId)" style="flex:1; min-width: 150px;">Verwijderen</button>
-    </div>
-  </div>
-</div>
+<!-- ===== SCREEN: CONTROLE DETAIL (leeg — detail is verplaatst naar tab-controles > cv-detail) ===== -->
+<div class="screen" id="screen-controleDetail" style="display:none;"></div>
 
 <!-- ===== SCREEN: SETTINGS ===== -->
 <div class="screen" id="screen-settings" style="overflow-y:auto;">
@@ -9422,6 +9425,59 @@ init = function() {
 };
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ===== IN-TAB CONTROLE NAVIGATIE =====
+
+function showControleSubView(view) {
+  document.getElementById('cv-list').style.display   = view === 'list'   ? '' : 'none';
+  document.getElementById('cv-form').style.display   = view === 'form'   ? '' : 'none';
+  document.getElementById('cv-detail').style.display = view === 'detail' ? '' : 'none';
+}
+
+// Wanneer naar controles-tab geswitcht wordt, standaard lijst tonen
+const _origSwitchTabForControles = switchTab;
+switchTab = function(tab, el) {
+  _origSwitchTabForControles(tab, el);
+  if (tab === 'controles') {
+    showControleSubView('list');
+  }
+};
+
+// Onderschep showScreen voor controleForm en controleDetail
+// zodat navigatie binnen de project detail-tab blijft
+const _origShowScreenControle = showScreen;
+showScreen = function(screenId) {
+  if (screenId === 'controleForm') {
+    _origShowScreenControle('projectDetail');
+    const tabBtn = document.querySelectorAll('#screen-projectDetail .tab-btn')[1];
+    if (tabBtn) switchTab('controles', tabBtn);
+    showControleSubView('form');
+  } else if (screenId === 'controleDetail') {
+    _origShowScreenControle('projectDetail');
+    const tabBtn = document.querySelectorAll('#screen-projectDetail .tab-btn')[1];
+    if (tabBtn) switchTab('controles', tabBtn);
+    showControleSubView('detail');
+  } else {
+    _origShowScreenControle(screenId);
+  }
+};
+
+// Override deleteControle: na verwijderen terug naar controle-lijst in de tab
+deleteControle = function(id) {
+  if (!confirm('Weet u zeker dat u deze controle wilt verwijderen?')) return;
+  const projects = getProjects();
+  const pIdx = projects.findIndex(x => x.id === currentProjectId);
+  if (pIdx !== -1) {
+    projects[pIdx].controles = (projects[pIdx].controles || []).filter(c => c.id !== id);
+    saveProjects(projects);
+  }
+  showToast('Controle verwijderd');
+  _origShowScreenControle('projectDetail');
+  const tabBtn = document.querySelectorAll('#screen-projectDetail .tab-btn')[1];
+  if (tabBtn) _origSwitchTabForControles('controles', tabBtn);
+  showControleSubView('list');
+  renderControleList();
+};
 </script>
 </body>
 </html>
