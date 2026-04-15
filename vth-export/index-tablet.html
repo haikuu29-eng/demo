@@ -1101,14 +1101,13 @@ html, body { height: 100%; overflow: hidden; }
     <!-- Filter chips -->
     <div class="filter-row" id="filterChips">
       <div class="filter-chip-t active" data-filter="all" onclick="setFilter(this,'all')">Alle</div>
-      <div class="filter-chip-t" data-filter="type-Bouwvergunning" onclick="setFilter(this,'type-Bouwvergunning')">Bouwvergunning</div>
+      <div class="filter-chip-t" data-filter="type-Toezicht omgevingsvergunning" onclick="setFilter(this,'type-Toezicht omgevingsvergunning')">Toezicht omgevingsvergunning</div>
       <div class="filter-chip-t" data-filter="type-Melding handhaving" onclick="setFilter(this,'type-Melding handhaving')">Melding handhaving</div>
       <div class="filter-chip-t" data-filter="type-Handhavingsverzoek" onclick="setFilter(this,'type-Handhavingsverzoek')">Handhavingsverzoek</div>
       <div class="filter-chip-t" data-filter="status-Nog niet gestart" onclick="setFilter(this,'status-Nog niet gestart')">Nog niet gestart</div>
-      <div class="filter-chip-t" data-filter="status-Open" onclick="setFilter(this,'status-Open')">Open</div>
       <div class="filter-chip-t" data-filter="status-In uitvoering" onclick="setFilter(this,'status-In uitvoering')">In uitvoering</div>
-      <div class="filter-chip-t" data-filter="status-Opgeleverd" onclick="setFilter(this,'status-Opgeleverd')">Opgeleverd</div>
-      <div class="filter-chip-t" data-filter="status-Afgehandeld" onclick="setFilter(this,'status-Afgehandeld')">Afgehandeld</div>
+      <div class="filter-chip-t" data-filter="status-Gereed" onclick="setFilter(this,'status-Gereed')">Gereed</div>
+      <div class="filter-chip-t" data-filter="status-In te trekken" onclick="setFilter(this,'status-In te trekken')">In te trekken</div>
     </div>
   </div>
 
@@ -1238,7 +1237,7 @@ html, body { height: 100%; overflow: hidden; }
         <label>Zaaktype (optioneel)</label>
         <select id="sf-zaaktype">
           <option value="">Alle zaaktypen</option>
-          <option>Bouwvergunning</option>
+          <option>Toezicht omgevingsvergunning</option>
           <option>Melding handhaving</option>
           <option>Handhavingsverzoek</option>
         </select>
@@ -1293,7 +1292,7 @@ html, body { height: 100%; overflow: hidden; }
           <label>Type zaak *</label>
           <select id="pf-typeZaak">
             <option value="">-- Selecteer --</option>
-            <option value="Bouwvergunning">Bouwvergunning</option>
+            <option value="Toezicht omgevingsvergunning">Toezicht omgevingsvergunning</option>
             <option value="Melding handhaving">Melding handhaving</option>
             <option value="Handhavingsverzoek">Handhavingsverzoek</option>
             <option value="Anders">Anders</option>
@@ -1364,10 +1363,9 @@ html, body { height: 100%; overflow: hidden; }
         <label>Status</label>
         <select id="pf-status">
           <option value="Nog niet gestart">Nog niet gestart</option>
-          <option value="Open">Open</option>
           <option value="In uitvoering">In uitvoering</option>
-          <option value="Opgeleverd">Opgeleverd</option>
-          <option value="Afgehandeld">Afgehandeld</option>
+          <option value="Gereed">Gereed</option>
+          <option value="In te trekken">In te trekken</option>
         </select>
       </div>
       <div class="form-group">
@@ -5948,10 +5946,10 @@ const BBL_ARTIKELEN = [
 
 // ===== CONSTANTS =====
 const SOORT_CONTROLE = ["Start uitvoering","Aanloopcontrole","Tussentijdse controle","Eindcontrole","Controle n.a.v. melding","Hercontrole","Handhavingscontrole"];
-const TYPE_ZAAK = ["Bouwvergunning","Melding handhaving","Handhavingsverzoek","Anders"];
+const TYPE_ZAAK = ["Toezicht omgevingsvergunning","Melding handhaving","Handhavingsverzoek","Anders"];
 const STANDAARD_ONDERWERPEN = ["Fundering","Casco/ruwbouw","Draagconstructie","Dakconstructie","Gevels/buitenschil","Brandcompartimentering","Vluchtwegen/nooduitgangen","Brandmeldinstallatie","Rookdoorvoeren","Brandwerende scheiding","Gebruiksfunctie/bezetting","Ventilatie/luchtverversing","Energieprestatie (BENG)","Toegankelijkheid","Kwaliteitsborging (Wkb)","Gereedmelding compleet","Anders"];
 const BBL_ONDERDELEN = ["Bbl Afdeling 2.1 - Constructieve veiligheid","Bbl Afdeling 2.2 - Brand","Bbl Afdeling 2.3 - Gezondheid","Bbl Afdeling 2.4 - Bruikbaarheid","Bbl Afdeling 2.5 - Duurzaamheid/Energie","Bbl Afdeling 2.6 - Veiligheid bij gebruik","Bbl Hoofdstuk 3 - Bestaande bouw","Bbl Hoofdstuk 4 - Tijdelijke bouw","Bbl Hoofdstuk 5 - Sloop"];
-const PROJECT_STATUS = ["Nog niet gestart","Open","In uitvoering","Opgeleverd","Afgehandeld"];
+const PROJECT_STATUS = ["Nog niet gestart","In uitvoering","Gereed","In te trekken"];
 const GEVOLGKLASSE = ["Gevolgklasse 1","Gevolgklasse 2","Gevolgklasse 3"];
 const ACTIVITEITEN = ["Technische bouwactiviteit","Omgevingsplanactiviteit","Brandveilig gebruik","Sloopactiviteit","Anders"];
 
@@ -6139,7 +6137,7 @@ function renderProjectList() {
     return datums.length ? datums.sort().pop() : '';
   };
 
-  const statusVolgorde = {'Nog niet gestart':0,'Open':1,'In uitvoering':2,'Opgeleverd':3,'Afgehandeld':4};
+  const statusVolgorde = {'Nog niet gestart':0,'In uitvoering':1,'Gereed':2,'In te trekken':3};
 
   filtered.sort((a, b) => {
     if (sorteer === 'laatste-controle') {
@@ -6161,7 +6159,7 @@ function renderProjectList() {
   }
 
   list.innerHTML = filtered.map(p => {
-    const statusClass = (p.status || 'Open').toLowerCase().replace(/ /g, '-');
+    const statusClass = (p.status || 'Nog niet gestart').toLowerCase().replace(/ /g, '-');
     const laatsteControle = getLaatsteControle(p);
     const aantalControles = (p.controles || []).length;
     const controleInfo = laatsteControle
@@ -6171,7 +6169,7 @@ function renderProjectList() {
       <div class="project-card" onclick="openProjectDetail('${p.id}')">
         <div class="card-top">
           <div class="project-name">${escapeHtml(p.naam || 'Naamloos')}</div>
-          <span class="status-chip ${statusClass}">${escapeHtml(p.status || 'Open')}</span>
+          <span class="status-chip ${statusClass}">${escapeHtml(p.status || 'Nog niet gestart')}</span>
         </div>
         <div class="project-meta">
           <span>&#128205; ${escapeHtml([p.straat, p.plaats].filter(Boolean).join(', ') || 'Geen adres')}</span>
@@ -6206,7 +6204,7 @@ function openProjectForm(projectId) {
       document.getElementById('pf-initContact').value = p.initContact || '';
       document.getElementById('pf-aannemerNaam').value = p.aannemerNaam || '';
       document.getElementById('pf-aannemerContact').value = p.aannemerContact || '';
-      document.getElementById('pf-status').value = p.status || 'Open';
+      document.getElementById('pf-status').value = p.status || 'Nog niet gestart';
       document.getElementById('pf-opmerkingen').value = p.opmerkingen || '';
       selectedActiviteiten = p.activiteiten || [];
     }
@@ -6385,10 +6383,9 @@ function renderKaart() {
 
   const statusKleuren = {
     'Nog niet gestart': '#9E9E9E',
-    'Open': '#1B6B6B',
-    'In uitvoering': '#E65100',
-    'Opgeleverd': '#2E7D32',
-    'Afgehandeld': '#757575'
+    'In uitvoering':    '#E65100',
+    'Gereed':           '#2E7D32',
+    'In te trekken':    '#7B1FA2'
   };
 
   const bounds = [];
@@ -6407,7 +6404,7 @@ function renderKaart() {
     marker.bindPopup(`
       <strong>${escapeHtml(p.naam)}</strong><br>
       ${escapeHtml([p.straat, p.plaats].filter(Boolean).join(', '))}<br>
-      <span style="color:${kleur}; font-weight:600;">${p.status || 'Open'}</span><br>
+      <span style="color:${kleur}; font-weight:600;">${p.status || 'Nog niet gestart'}</span><br>
       ${laatste ? '📅 ' + formatDate(laatste.datum) : 'Nog geen controles'}<br>
       <a href="#" onclick="event.preventDefault(); kaartNaarProject('${p.id}')" style="color:var(--primary);">Ga naar project →</a>
     `);
@@ -6509,7 +6506,7 @@ function renderProjectDetail() {
          </span>`
       : '-')}
     ${detailItem('Type zaak', p.typeZaak || '-')}
-    ${detailItem('Status', `<span class="status-chip ${(p.status||'').toLowerCase().replace(/ /g,'-')}">${escapeHtml(p.status || 'Open')}</span>`)}
+    ${detailItem('Status', `<span class="status-chip ${(p.status||'nog-niet-gestart').toLowerCase().replace(/ /g,'-')}">${escapeHtml(p.status || 'Nog niet gestart')}</span>`)}
     ${detailItem('Straat + huisnummer', p.straat || '-')}
     ${detailItem('Postcode', p.postcode || '-')}
     ${detailItem('Plaats', p.plaats || '-')}
@@ -6866,7 +6863,7 @@ function saveControle() {
   }
 
   // Start uitvoering → zet projectstatus automatisch op 'In uitvoering'
-  if (data.soort === 'Start uitvoering' && projects[pIdx].status !== 'Afgehandeld' && projects[pIdx].status !== 'Opgeleverd') {
+  if (data.soort === 'Start uitvoering' && projects[pIdx].status !== 'In te trekken' && projects[pIdx].status !== 'Gereed') {
     projects[pIdx].status = 'In uitvoering';
     projects[pIdx].startUitvoeringDatum = data.datum;
   }
@@ -8249,7 +8246,7 @@ function importeerNaarProject() {
   // Vul alle velden in — projectnaam: eerst ingevuld veld, dan zaaknummer, dan adres
   document.getElementById('pf-naam').value = naam || zaaknummer || ([straat, postcode, plaats].filter(Boolean).join(' '));
   document.getElementById('pf-zaaknummer').value = zaaknummer;
-  document.getElementById('pf-typeZaak').value = 'Bouwvergunning';
+  document.getElementById('pf-typeZaak').value = 'Toezicht omgevingsvergunning';
   document.getElementById('pf-straat').value = straat;
   document.getElementById('pf-postcode').value = postcode;
   document.getElementById('pf-plaats').value = plaats;
@@ -8637,7 +8634,7 @@ function dsoFoutMelding(tekst) {
 const STANDAARD_SJABLONEN = [
   {
     id: 'tpl_dakkapel_eerste', naam: 'Dakkapel — aanloopcontrole',
-    zaaktype: 'Bouwvergunning', soort: 'Aanloopcontrole',
+    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Aanloopcontrole',
     onderwerpen: [
       { naam: 'Bouwveiligheid omgeving', beschrijving: 'Controleer of de omgeving veilig is afgeschermd (steigers, vangnetten).', bblArtikel: '4.1' },
       { naam: 'Maatvoering dakkapel', beschrijving: 'Controleer hoogte, breedte en diepte conform de vergunde tekening.', bblArtikel: '4.34' },
@@ -8647,7 +8644,7 @@ const STANDAARD_SJABLONEN = [
   },
   {
     id: 'tpl_dakkapel_eind', naam: 'Dakkapel — eindcontrole',
-    zaaktype: 'Bouwvergunning', soort: 'Eindcontrole',
+    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Eindcontrole',
     onderwerpen: [
       { naam: 'Waterdichtheid aansluiting dak', beschrijving: 'Controleer kitvoeg, loodslabben en dakbedekking rondom dakkapel.', bblArtikel: '4.40' },
       { naam: 'Brandveiligheid dakbedekking', beschrijving: 'Controleer of dakbedekking voldoet aan brandklasse vereisten.', bblArtikel: '3.9' },
@@ -8658,7 +8655,7 @@ const STANDAARD_SJABLONEN = [
   },
   {
     id: 'tpl_aanbouw_ruwbouw', naam: 'Aanbouw/uitbouw — ruwbouw',
-    zaaktype: 'Bouwvergunning', soort: 'Tussentijdse controle',
+    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Tussentijdse controle',
     onderwerpen: [
       { naam: 'Fundering', beschrijving: 'Controleer funderingsdiepte, -breedte en -type conform berekening.', bblArtikel: '4.20' },
       { naam: 'Constructieve veiligheid', beschrijving: 'Controleer wanden, balken en draagconstructie conform constructieberekening.', bblArtikel: '4.2' },
@@ -8668,7 +8665,7 @@ const STANDAARD_SJABLONEN = [
   },
   {
     id: 'tpl_aanbouw_eind', naam: 'Aanbouw/uitbouw — eindcontrole',
-    zaaktype: 'Bouwvergunning', soort: 'Eindcontrole',
+    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Eindcontrole',
     onderwerpen: [
       { naam: 'Maatvoering conform vergunning', beschrijving: 'Eindmeting situering, oppervlak en hoogte conform vergunning.', bblArtikel: '4.34' },
       { naam: 'Thermische isolatie', beschrijving: 'Controleer Rc-waarde isolatie gevels, dak en vloer.', bblArtikel: '4.175' },
@@ -8680,7 +8677,7 @@ const STANDAARD_SJABLONEN = [
   },
   {
     id: 'tpl_isolatie', naam: 'Isolatie / gevelrenovatie',
-    zaaktype: 'Bouwvergunning', soort: 'Tussentijdse controle',
+    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Tussentijdse controle',
     onderwerpen: [
       { naam: 'Isolatiemateriaal en dikte', beschrijving: 'Controleer type isolatie, Rd-waarde en dikte conform bestek.', bblArtikel: '4.175' },
       { naam: 'Dampscherm', beschrijving: 'Controleer aanwezigheid en correcte overlapping van dampscherm/folie.', bblArtikel: '4.40' },
@@ -8946,11 +8943,25 @@ function parseZaakonderwerp(onderwerp) {
 }
 
 function xlsStatusNaarApp(status) {
-  if (!status) return 'Open';
+  if (!status) return 'Nog niet gestart';
   const s = status.toLowerCase().trim();
-  if (s === 'resolved') return 'Opgeleverd';
-  if (s === 'open') return 'Open';
-  return 'Open';
+  if (s === 'resolved' || s === 'gereed' || s === 'opgeleverd') return 'Gereed';
+  if (s === 'in uitvoering' || s === 'open') return 'In uitvoering';
+  if (s === 'in te trekken' || s === 'afgehandeld' || s === 'ingetrokken') return 'In te trekken';
+  if (s === 'nog niet gestart') return 'Nog niet gestart';
+  return 'Nog niet gestart';
+}
+
+function xlsZaaktypeNaarApp(zaaktype) {
+  if (!zaaktype) return '';
+  const z = zaaktype.toLowerCase().trim();
+  if (z.startsWith('toezicht omgevingsvergunning') || z.startsWith('toezicht omgevinigsvergunning')) {
+    return 'Toezicht omgevingsvergunning';
+  }
+  if (z.includes('melding handhaving')) return 'Melding handhaving';
+  if (z.includes('handhavingsverzoek') || z.startsWith('verzoek tot handha')) return 'Handhavingsverzoek';
+  // Bewaar originele waarde als fallback
+  return zaaktype.trim();
 }
 
 function handleXlsFile(event) {
@@ -9037,7 +9048,7 @@ function vulXlsPreviewTabel() {
   xlsRijen.forEach((rij, idx) => {
     const tr = document.createElement('tr');
     if (rij.isDuplicaat) tr.className = 'xls-duplicate';
-    const statusKlasse = rij.statusApp === 'Opgeleverd' ? 'xls-status-resolved' : 'xls-status-open';
+    const statusKlasse = rij.statusApp === 'Gereed' ? 'xls-status-resolved' : 'xls-status-open';
     const adresTekst = [rij.straat, rij.postcode + (rij.plaats ? ' ' + rij.plaats : '')].filter(Boolean).join(', ');
     tr.innerHTML = `
       <td><input type="checkbox" data-idx="${idx}" ${rij.geselecteerd ? 'checked' : ''}
@@ -9083,7 +9094,7 @@ async function importeerXlsGeselecteerd() {
       id: generateId(),
       naam: rij.naam || ('Zaak ' + rij.zaakNr),
       zaaknummer: rij.zaakNr,
-      typeZaak: rij.zaakType || 'Bouwvergunning',
+      typeZaak: xlsZaaktypeNaarApp(rij.zaakType) || 'Toezicht omgevingsvergunning',
       status: rij.statusApp,
       straat: rij.straat,
       postcode: rij.postcode,
@@ -9202,7 +9213,7 @@ function tabletRenderSplitList() {
     if (currentFilter.startsWith('type-')) filtered = filtered.filter(p => p.typeZaak === currentFilter.replace('type-',''));
     if (currentFilter.startsWith('status-')) filtered = filtered.filter(p => p.status === currentFilter.replace('status-',''));
   }
-  const statusKleuren = {'Nog niet gestart':'#9E9E9E','Open':'#1B6B6B','In uitvoering':'#E65100','Opgeleverd':'#2E7D32','Afgehandeld':'#757575'};
+  const statusKleuren = {'Nog niet gestart':'#9E9E9E','In uitvoering':'#E65100','Gereed':'#2E7D32','In te trekken':'#7B1FA2'};
   const cont = document.getElementById('splitProjectList');
   if (!cont) return;
   if (filtered.length === 0) {
@@ -9214,7 +9225,7 @@ function tabletRenderSplitList() {
     const sel = p.id === currentProjectId ? ' selected' : '';
     return `<div class="split-project-card${sel}" onclick="openProjectDetail('${p.id}')" style="border-left:4px solid ${kleur};">
       <div class="sp-name">${escapeHtml(p.naam||'Naamloos')}</div>
-      <div class="sp-meta">📍 ${escapeHtml([p.straat,p.plaats].filter(Boolean).join(', ')||'Geen adres')} · <span style="color:${kleur};font-weight:600;">${escapeHtml(p.status||'Open')}</span></div>
+      <div class="sp-meta">📍 ${escapeHtml([p.straat,p.plaats].filter(Boolean).join(', ')||'Geen adres')} · <span style="color:${kleur};font-weight:600;">${escapeHtml(p.status||'Nog niet gestart')}</span></div>
     </div>`;
   }).join('');
 }
@@ -9228,8 +9239,8 @@ function tabletUpdateDetailHeader() {
   const links = document.getElementById('dh-links');
   if (title) title.textContent = p.naam || 'Naamloos';
   if (addr) addr.textContent = [p.straat, p.postcode, p.plaats].filter(Boolean).join(' · ') || 'Geen adres';
-  const statusClass = (p.status||'open').toLowerCase().replace(/ /g,'-');
-  if (statusEl) { statusEl.className = 'status-chip ' + statusClass; statusEl.textContent = p.status || 'Open'; }
+  const statusClass = (p.status||'nog-niet-gestart').toLowerCase().replace(/ /g,'-');
+  if (statusEl) { statusEl.className = 'status-chip ' + statusClass; statusEl.textContent = p.status || 'Nog niet gestart'; }
   if (links) {
     let html = '';
     if (p.zaaknummer) html += `<a href="https://mijn.waalre.nl/intern/zaak/${encodeURIComponent(p.zaaknummer)}" target="_blank" class="dh-link">📂 Zaaksysteem</a>`;
@@ -9276,10 +9287,10 @@ function tabletRenderVandaag() {
   if (!inhoud) return;
 
   const projects = getProjects();
-  const statusKleuren = {'Nog niet gestart':'#9E9E9E','Open':'#1B6B6B','In uitvoering':'#E65100','Opgeleverd':'#2E7D32','Afgehandeld':'#757575'};
+  const statusKleuren = {'Nog niet gestart':'#9E9E9E','In uitvoering':'#E65100','Gereed':'#2E7D32','In te trekken':'#7B1FA2'};
 
   // Status verdeling
-  const counts = {'Nog niet gestart':0,'Open':0,'In uitvoering':0,'Opgeleverd':0,'Afgehandeld':0};
+  const counts = {'Nog niet gestart':0,'In uitvoering':0,'Gereed':0,'In te trekken':0};
   projects.forEach(p => { if (counts[p.status] !== undefined) counts[p.status]++; });
   const totaal = projects.length || 1;
 
@@ -9342,8 +9353,8 @@ function tabletRenderVandaag() {
 function tabletRenderStats() {
   const projects = getProjects();
   const uitvoering = projects.filter(p => p.status === 'In uitvoering').length;
-  const open = projects.filter(p => p.status === 'Open').length;
-  const nogNiet = projects.filter(p => p.status === 'Nog niet gestart').length;
+  const gereed     = projects.filter(p => p.status === 'Gereed').length;
+  const nogNiet    = projects.filter(p => p.status === 'Nog niet gestart').length;
 
   // Controles deze week
   const nu = new Date();
@@ -9357,7 +9368,7 @@ function tabletRenderStats() {
     <div class="stat-card-t highlight"><div class="stat-v">${projects.length}</div><div class="stat-l">Actieve zaken</div></div>
     <div class="stat-card-t"><div class="stat-v" style="color:#E65100;">${uitvoering}</div><div class="stat-l">In uitvoering</div></div>
     <div class="stat-card-t"><div class="stat-v" style="color:#1B6B6B;">${controlesDezWeek}</div><div class="stat-l">Controles (7 dgn)</div></div>
-    <div class="stat-card-t"><div class="stat-v" style="color:#9E9E9E;">${nogNiet}</div><div class="stat-l">Nog niet gestart</div></div>
+    <div class="stat-card-t"><div class="stat-v" style="color:#2E7D32;">${gereed}</div><div class="stat-l">Gereed</div></div>
   `;
 }
 
