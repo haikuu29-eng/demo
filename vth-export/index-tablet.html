@@ -69,7 +69,8 @@ html, body { height: 100%; overflow: hidden; }
   display: grid;
   grid-template-rows: 56px 1fr;
   grid-template-columns: 68px 1fr;
-  height: 100vh;
+  height: 100vh;   /* fallback */
+  height: 100dvh;  /* dynamic viewport height — accounts for Edge/Chrome browser chrome on Android */
   background: #fff;
 }
 
@@ -9587,6 +9588,19 @@ init = function() {
 };
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ===== VIEWPORT HEIGHT FIX — Android Edge/Chrome browser chrome =====
+// 100dvh is used in CSS; this JS fallback handles older browsers that don't support dvh.
+(function fixViewportHeight() {
+  function applyHeight() {
+    // Only apply JS fallback when dvh is not supported
+    if (!CSS.supports('height', '1dvh')) {
+      document.querySelector('.tablet-shell').style.height = window.innerHeight + 'px';
+    }
+  }
+  applyHeight();
+  window.addEventListener('resize', applyHeight);
+})();
 
 // ===== BESTAND SYNC — File System Access API =====
 
