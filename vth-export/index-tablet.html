@@ -896,6 +896,80 @@ html, body { height: 100%; overflow: hidden; }
 }
 .app-footer a { color: var(--primary); text-decoration: underline; }
 
+/* ===== PROJECT FORM — LANDSCAPE TABLET (twee kolommen + blauwe accent) ===== */
+#screen-projectForm { overflow: hidden; }
+
+.pf-topbar {
+  background: #1B3A52; padding: 11px 18px;
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.pf-topbar-title { color: #fff; font-size: 14px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-back-btn { background: rgba(255,255,255,.15); border: none; color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+
+.pf-shell { display: flex; flex: 1; overflow: hidden; }
+
+/* LEFT column — main fields */
+.pf-left {
+  flex: 1; overflow-y: auto; padding: 20px 22px; min-height: 0;
+  background: #F8FAFB; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+  border-right: 1px solid #E0E5EC;
+}
+
+/* RIGHT column — status + context */
+.pf-right {
+  width: 300px; flex-shrink: 0; display: flex; flex-direction: column;
+  background: #fff; overflow-y: auto; min-height: 0;
+  border-left: 4px solid #1B3A52;
+  -webkit-overflow-scrolling: touch; touch-action: pan-y;
+}
+.pf-right-inner { padding: 18px 16px; display: flex; flex-direction: column; flex: 1; gap: 0; }
+
+/* Section titles */
+.pf-section-title {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .7px; color: #1B3A52;
+  margin: 16px 0 10px; padding-bottom: 5px; border-bottom: 2px solid #E0E5EC;
+}
+.pf-section-title:first-child { margin-top: 0; }
+.pf-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 14px; }
+
+/* Status 2×2 grid */
+.pf-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.pf-status-btn {
+  padding: 10px 8px; border-radius: 8px; border: 2px solid #E0E5EC;
+  background: #F4F6F9; color: #888; font-size: 11px; font-weight: 700;
+  cursor: pointer; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  transition: all .15s; line-height: 1.2;
+}
+.pf-status-btn:hover { border-color: #1B3A52; background: #EEF2F7; color: #1B3A52; }
+.pf-status-dot { width: 9px; height: 9px; border-radius: 50%; background: #ccc; flex-shrink: 0; transition: background .15s; }
+
+/* Active states — lichte achtergrond + blauwe rand stijl */
+.pf-status-btn[data-status="Nog niet gestart"].active { background: #F5F5F5; border-color: #9E9E9E; color: #555; }
+.pf-status-btn[data-status="Nog niet gestart"].active .pf-status-dot { background: #9E9E9E; }
+.pf-status-btn[data-status="In uitvoering"].active { background: #FFF3E0; border-color: #E65100; color: #E65100; }
+.pf-status-btn[data-status="In uitvoering"].active .pf-status-dot { background: #E65100; }
+.pf-status-btn[data-status="Gereed"].active { background: #E8F5E9; border-color: #2E7D32; color: #2E7D32; }
+.pf-status-btn[data-status="Gereed"].active .pf-status-dot { background: #2E7D32; }
+.pf-status-btn[data-status="In te trekken"].active { background: #F3E5F5; border-color: #7B1FA2; color: #7B1FA2; }
+.pf-status-btn[data-status="In te trekken"].active .pf-status-dot { background: #7B1FA2; }
+
+/* Acties onderaan rechterkolom */
+.pf-right-actions { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.pf-pdf-btn {
+  background: #EEF2F7; border: 1px dashed #A0B0C0;
+  color: #1B3A52; padding: 9px 10px; border-radius: 8px;
+  font-size: 11px; font-weight: 600; cursor: pointer; text-align: center;
+}
+.pf-pdf-btn:hover { background: #DDE6F0; }
+.pf-save-btn {
+  background: #1B3A52; border: none; color: #fff;
+  padding: 13px; border-radius: 9px; font-size: 14px; font-weight: 800;
+  cursor: pointer; transition: background .15s;
+}
+.pf-save-btn:hover { background: #122840; }
+
 /* ===== PRINT STYLES ===== */
 @media print {
   body { background: #fff; font-size: 11pt; }
@@ -1258,23 +1332,25 @@ html, body { height: 100%; overflow: hidden; }
 </div>
 
 <!-- ===== SCREEN: PROJECT FORM ===== -->
-<div class="screen" id="screen-projectForm" style="overflow-y:auto;">
-  <div class="main-content" style="max-width:720px; margin:0 auto;">
-    <div class="settings-card">
-      <h3 id="projectFormTitle">Nieuw Project</h3>
-      
-      <div style="margin-bottom:16px; padding:12px; background:var(--primary-light); border-radius:var(--radius-sm); border:1px dashed var(--primary);">
-        <p style="font-size:13px; color:var(--primary); margin-bottom:8px; font-weight:600;">&#128196; Heb je een omgevingsvergunning als PDF?</p>
-        <button type="button" class="btn btn-secondary" onclick="openPdfImport()" style="width:100%;">
-          Importeer gegevens uit PDF
-        </button>
-      </div>
-      
+<div class="screen" id="screen-projectForm">
+
+  <!-- Topbar -->
+  <div class="pf-topbar">
+    <button class="pf-back-btn" onclick="goBack()">‹ Terug</button>
+    <span class="pf-topbar-title" id="projectFormTitle">Nieuw Project</span>
+  </div>
+
+  <!-- Twee kolommen -->
+  <div class="pf-shell">
+
+    <!-- LINKS: zaakgegevens, adres, activiteiten -->
+    <div class="pf-left">
+
+      <div class="pf-section-title">Zaakgegevens</div>
       <div class="form-group">
         <label>Projectnaam *</label>
         <input type="text" id="pf-naam" placeholder="Bijv. Nieuwbouw woning Kerkstraat 1">
       </div>
-      
       <div class="form-row">
         <div class="form-group">
           <label>Zaaknummer</label>
@@ -1292,8 +1368,8 @@ html, body { height: 100%; overflow: hidden; }
         </div>
       </div>
 
-      <div class="form-section-title">Adresgegevens</div>
-      <div class="form-row">
+      <div class="pf-section-title">Adresgegevens</div>
+      <div class="pf-row3">
         <div class="form-group">
           <label>Straat + huisnummer</label>
           <input type="text" id="pf-straat" placeholder="Kerkstraat 1">
@@ -1302,34 +1378,64 @@ html, body { height: 100%; overflow: hidden; }
           <label>Postcode</label>
           <input type="text" id="pf-postcode" placeholder="1234 AB">
         </div>
-      </div>
-      <div class="form-group">
-        <label>Plaats</label>
-        <input type="text" id="pf-plaats" placeholder="Voorbeeldstad">
-      </div>
-
-      <div class="form-section-title">Activiteiten &amp; Gevolgklasse</div>
-      <div class="form-group">
-        <label>Activiteiten</label>
-        <div class="multi-select-wrapper" id="activiteitenWrapper">
-          <div class="multi-select-container" id="activiteitenContainer" onclick="toggleMultiSelect('activiteiten')">
-            <span style="color: #9E9E9E; font-size: 14px;" id="activiteitenPlaceholder">Selecteer activiteiten...</span>
-          </div>
-          <div class="multi-select-dropdown" id="activiteitenDropdown"></div>
+        <div class="form-group">
+          <label>Plaats</label>
+          <input type="text" id="pf-plaats" placeholder="Voorbeeldstad">
         </div>
       </div>
-      <div class="form-group">
-        <label>Gevolgklasse</label>
-        <select id="pf-gevolgklasse">
-          <option value="">-- Selecteer --</option>
-          <option value="Gevolgklasse 1">Gevolgklasse 1</option>
-          <option value="Gevolgklasse 2">Gevolgklasse 2</option>
-          <option value="Gevolgklasse 3">Gevolgklasse 3</option>
-        </select>
+
+      <div class="pf-section-title">Activiteiten &amp; Gevolgklasse</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Activiteiten</label>
+          <div class="multi-select-wrapper" id="activiteitenWrapper">
+            <div class="multi-select-container" id="activiteitenContainer" onclick="toggleMultiSelect('activiteiten')">
+              <span style="color:#9E9E9E; font-size:14px;" id="activiteitenPlaceholder">Selecteer activiteiten...</span>
+            </div>
+            <div class="multi-select-dropdown" id="activiteitenDropdown"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Gevolgklasse</label>
+          <select id="pf-gevolgklasse">
+            <option value="">-- Selecteer --</option>
+            <option value="Gevolgklasse 1">Gevolgklasse 1</option>
+            <option value="Gevolgklasse 2">Gevolgklasse 2</option>
+            <option value="Gevolgklasse 3">Gevolgklasse 3</option>
+          </select>
+        </div>
       </div>
 
-      <div class="form-section-title">Betrokkenen</div>
-      <div class="form-row">
+    </div><!-- /pf-left -->
+
+    <!-- RECHTS: status + betrokkenen + opslaan -->
+    <div class="pf-right">
+      <div class="pf-right-inner">
+
+        <div class="pf-section-title">Status</div>
+        <div class="pf-status-grid">
+          <button class="pf-status-btn" data-status="Nog niet gestart" onclick="selectPfStatus('Nog niet gestart')">
+            <span class="pf-status-dot"></span>Nog niet gestart
+          </button>
+          <button class="pf-status-btn" data-status="In uitvoering" onclick="selectPfStatus('In uitvoering')">
+            <span class="pf-status-dot"></span>In uitvoering
+          </button>
+          <button class="pf-status-btn" data-status="Gereed" onclick="selectPfStatus('Gereed')">
+            <span class="pf-status-dot"></span>Gereed
+          </button>
+          <button class="pf-status-btn" data-status="In te trekken" onclick="selectPfStatus('In te trekken')">
+            <span class="pf-status-dot"></span>In te trekken
+          </button>
+        </div>
+        <!-- Hidden select — JS leest deze voor opslaan -->
+        <select id="pf-status" style="display:none;">
+          <option value="Nog niet gestart">Nog niet gestart</option>
+          <option value="In uitvoering">In uitvoering</option>
+          <option value="Gereed">Gereed</option>
+          <option value="In te trekken">In te trekken</option>
+        </select>
+
+        <div class="pf-section-title">Betrokkenen</div>
         <div class="form-group">
           <label>Initiatiefnemer naam</label>
           <input type="text" id="pf-initNaam" placeholder="Naam initiatiefnemer">
@@ -1338,8 +1444,6 @@ html, body { height: 100%; overflow: hidden; }
           <label>Initiatiefnemer contact</label>
           <input type="text" id="pf-initContact" placeholder="Tel / email">
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-group">
           <label>Aannemer naam</label>
           <input type="text" id="pf-aannemerNaam" placeholder="Naam aannemer">
@@ -1348,26 +1452,21 @@ html, body { height: 100%; overflow: hidden; }
           <label>Aannemer contact</label>
           <input type="text" id="pf-aannemerContact" placeholder="Tel / email">
         </div>
-      </div>
 
-      <div class="form-section-title">Status &amp; Opmerkingen</div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="pf-status">
-          <option value="Nog niet gestart">Nog niet gestart</option>
-          <option value="In uitvoering">In uitvoering</option>
-          <option value="Gereed">Gereed</option>
-          <option value="In te trekken">In te trekken</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Opmerkingen</label>
-        <textarea id="pf-opmerkingen" placeholder="Algemene opmerkingen over het project..."></textarea>
-      </div>
+        <div class="pf-section-title">Opmerkingen</div>
+        <div class="form-group">
+          <textarea id="pf-opmerkingen" placeholder="Opmerkingen..." style="min-height:70px;"></textarea>
+        </div>
 
-      <button class="btn btn-primary btn-block btn-lg" onclick="saveProject()">Opslaan</button>
-    </div>
-  </div>
+        <div class="pf-right-actions">
+          <button class="pf-pdf-btn" onclick="openPdfImport()">📄 Importeer uit PDF</button>
+          <button class="pf-save-btn" onclick="saveProject()">✓ Opslaan</button>
+        </div>
+
+      </div><!-- /pf-right-inner -->
+    </div><!-- /pf-right -->
+
+  </div><!-- /pf-shell -->
 </div>
 
 <!-- ===== SCREEN: PROJECT DETAIL (split view) ===== -->
@@ -6177,6 +6276,14 @@ function renderProjectList() {
   }).join('');
 }
 
+// ===== STATUS KNOPPEN PROJECT FORM =====
+function selectPfStatus(value) {
+  document.getElementById('pf-status').value = value;
+  document.querySelectorAll('.pf-status-btn').forEach(btn => btn.classList.remove('active'));
+  const btn = document.querySelector(`.pf-status-btn[data-status="${value}"]`);
+  if (btn) btn.classList.add('active');
+}
+
 // ===== PROJECT FORM =====
 function openProjectForm(projectId) {
   editingProjectId = projectId || null;
@@ -6196,7 +6303,7 @@ function openProjectForm(projectId) {
       document.getElementById('pf-initContact').value = p.initContact || '';
       document.getElementById('pf-aannemerNaam').value = p.aannemerNaam || '';
       document.getElementById('pf-aannemerContact').value = p.aannemerContact || '';
-      document.getElementById('pf-status').value = p.status || 'Nog niet gestart';
+      selectPfStatus(p.status || 'Nog niet gestart');
       document.getElementById('pf-opmerkingen').value = p.opmerkingen || '';
       selectedActiviteiten = p.activiteiten || [];
     }
@@ -6213,7 +6320,7 @@ function openProjectForm(projectId) {
     document.getElementById('pf-initContact').value = '';
     document.getElementById('pf-aannemerNaam').value = '';
     document.getElementById('pf-aannemerContact').value = '';
-    document.getElementById('pf-status').value = 'Nog niet gestart';
+    selectPfStatus('Nog niet gestart');
     document.getElementById('pf-opmerkingen').value = '';
     document.getElementById('projectFormTitle').textContent = 'Nieuw Project';
   }
@@ -8247,7 +8354,7 @@ function importeerNaarProject() {
   document.getElementById('pf-initContact').value = '';
   document.getElementById('pf-aannemerNaam').value = '';
   document.getElementById('pf-aannemerContact').value = '';
-  document.getElementById('pf-status').value = 'Nog niet gestart';
+  selectPfStatus('Nog niet gestart');
   document.getElementById('pf-opmerkingen').value = bestemmingsplan ? 'Bestemmingsplan: ' + bestemmingsplan + (datum ? '\nDatum vergunning: ' + datum : '') : (datum ? 'Datum vergunning: ' + datum : '');
   document.getElementById('projectFormTitle').textContent = 'Nieuw Project (uit vergunning)';
 
