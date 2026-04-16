@@ -9241,8 +9241,31 @@ async function importeerXlsGeselecteerd() {
   }, 1500);
 }
 
+// ===== DATA MIGRATIE — normaliseer oude type/status waarden =====
+function migreerLegacyData() {
+  const geldigeTypes   = new Set(['Toezicht omgevingsvergunning','Melding handhaving','Handhavingsverzoek','Anders']);
+  const geldigeStatussen = new Set(['Nog niet gestart','In uitvoering','Gereed','In te trekken']);
+
+  const projects = getProjects();
+  let gewijzigd = false;
+
+  projects.forEach(p => {
+    if (!geldigeTypes.has(p.typeZaak)) {
+      p.typeZaak = 'Anders';
+      gewijzigd = true;
+    }
+    if (!geldigeStatussen.has(p.status)) {
+      p.status = 'Nog niet gestart';
+      gewijzigd = true;
+    }
+  });
+
+  if (gewijzigd) saveProjects(projects);
+}
+
 // ===== INIT =====
 function init() {
+  migreerLegacyData();
   loadSettings();
   renderProjectList();
   
