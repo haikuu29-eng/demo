@@ -6372,6 +6372,13 @@ function saveProject() {
       const oud = projects[idx];
       const adresGewijzigd = oud.straat !== straat || oud.postcode !== postcode || oud.plaats !== plaats;
       if (!adresGewijzigd && oud.lat) { data.lat = oud.lat; data.lng = oud.lng; }
+      // Voeg geïmporteerde voorschriften toe bij bewerken (PDF-import)
+      if (pendingVoorschriften.length > 0) {
+        data.voorschriften = [...(oud.voorschriften || []), ...pendingVoorschriften];
+        pendingVoorschriften = [];
+        pendingBestemmingsplan = '';
+        pendingDatum = '';
+      }
       projects[idx] = { ...oud, ...data };
     }
     currentProjectId = editingProjectId;
@@ -8346,7 +8353,7 @@ function importeerNaarProject() {
   pendingDatum = datum;
 
   // Open het projectformulier met de geïmporteerde gegevens vooringevuld
-  editingProjectId = null;
+  // editingProjectId behouden: als we vanuit bewerken kwamen, blijft het bewerkproject actief
   selectedActiviteiten = activiteiten ? [activiteiten] : [];
 
   // Vul alle velden in — projectnaam: eerst ingevuld veld, dan zaaknummer, dan adres
@@ -8363,15 +8370,18 @@ function importeerNaarProject() {
   document.getElementById('pf-aannemerContact').value = '';
   selectPfStatus('Nog niet gestart');
   document.getElementById('pf-opmerkingen').value = bestemmingsplan ? 'Bestemmingsplan: ' + bestemmingsplan + (datum ? '\nDatum vergunning: ' + datum : '') : (datum ? 'Datum vergunning: ' + datum : '');
-  document.getElementById('projectFormTitle').textContent = 'Nieuw Project (uit vergunning)';
+  document.getElementById('projectFormTitle').textContent = editingProjectId ? 'Project Bewerken (uit PDF)' : 'Nieuw Project (uit vergunning)';
 
   renderActiviteitenSelect();
 
   // Reset importscherm
   resetPdfImportScherm();
 
-  // Navigeer naar projectformulier
-  navigateTo('projectForm');
+  // Navigeer naar projectformulier — gebruik showScreen (niet navigateTo) om te voorkomen
+  // dat 'pdfImport' op de navigatiestapel terechtkomt. Verwijder ook 'projectForm' uit de
+  // stapel zodat "Terug" vanuit het formulier naar het juiste scherm terugkeert.
+  if (navigationStack[navigationStack.length - 1] === 'projectForm') navigationStack.pop();
+  showScreen('projectForm');
 
   showToast('Gegevens overgenomen — controleer en sla op');
 }
