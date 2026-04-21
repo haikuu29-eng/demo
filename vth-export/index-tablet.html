@@ -1663,6 +1663,12 @@ html, body { height: 100%; overflow: hidden; }
         <input type="text" id="set-rp-apikey" placeholder="Plak hier uw Ruimtelijke Plannen API-key"
           style="font-family:monospace; font-size:12px;" autocomplete="off">
       </div>
+      <div class="form-group">
+        <label>Anthropic API-key <span style="font-size:12px; color:var(--text-secondary);">(AI-analyse bij PDF-import)</span></label>
+        <input type="password" id="set-anthropic-apikey" placeholder="sk-ant-api03-..."
+          style="font-family:monospace; font-size:12px;" autocomplete="off">
+        <p style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Optioneel. Ingesteld = knop "✨ AI Analyseren" verschijnt bij PDF-import.</p>
+      </div>
       <button class="btn btn-primary btn-block" onclick="saveSettings()">Instellingen Opslaan</button>
     </div>
 
@@ -1848,11 +1854,14 @@ html, body { height: 100%; overflow: hidden; }
     <div style="flex:1; border-right:2px solid var(--border); display:flex; flex-direction:column; min-width:0;">
       <!-- Upload zone -->
       <div id="pdfUploadZone" style="padding:16px; background:var(--primary-light); border-bottom:1px solid var(--border); flex-shrink:0;">
-        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; color:var(--primary);">
-          &#128194; PDF selecteren
-          <input type="file" accept="application/pdf" id="pdfFileInput" style="display:none;" onchange="handlePdfUpload(event)">
-        </label>
-        <p id="pdfStatus" style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Nog geen bestand geladen</p>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:var(--primary); flex-shrink:0;">
+            &#128194; PDF selecteren
+            <input type="file" accept="application/pdf" id="pdfFileInput" style="display:none;" onchange="handlePdfUpload(event)">
+          </label>
+          <button id="aiAnalyseBtn" onclick="aiAnalyseerPdf()" style="display:none; background:#1B4B6B; color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0;">✨ AI Analyseren</button>
+        </div>
+        <p id="pdfStatus" style="font-size:12px; color:var(--text-secondary); margin-top:6px;">Nog geen bestand geladen</p>
       </div>
       
       <!-- Instructie -->
@@ -7761,6 +7770,7 @@ function loadSettings() {
   document.getElementById('set-gemeentenaam').value = s.gemeentenaam || '';
   document.getElementById('set-toezichthouder').value = s.toezichthouder || '';
   document.getElementById('set-rp-apikey').value = s.rpApiKey || '';
+  document.getElementById('set-anthropic-apikey').value = s.anthropicApiKey || '';
   // Laad logo preview
   const logo = storage.getItem('vth_logo') || '';
   showLogoPreview(logo || null);
@@ -7770,7 +7780,8 @@ function saveSettings() {
   const data = {
     gemeentenaam: document.getElementById('set-gemeentenaam').value.trim(),
     toezichthouder: document.getElementById('set-toezichthouder').value.trim(),
-    rpApiKey: document.getElementById('set-rp-apikey').value.trim()
+    rpApiKey: document.getElementById('set-rp-apikey').value.trim(),
+    anthropicApiKey: document.getElementById('set-anthropic-apikey').value.trim()
   };
   saveSettingsData(data);
   showToast('Instellingen opgeslagen');
@@ -8189,9 +8200,124 @@ async function handlePdfUpload(event) {
     document.getElementById('pdfStatus').textContent = '✓ ' + file.name + ' — ' + tekstBlokken.length + ' tekstregels gevonden';
     huidigePdfTekst = tekstBlokken;
     renderPdfTekst(tekstBlokken);
+    // Toon AI-knop als er een Anthropic API-key is ingesteld
+    const aiBtn = document.getElementById('aiAnalyseBtn');
+    if (aiBtn) aiBtn.style.display = getSettings().anthropicApiKey ? '' : 'none';
   } catch(err) {
     document.getElementById('pdfStatus').textContent = '⚠️ Fout bij lezen: ' + err.message;
     document.getElementById('pdfTekstContainer').innerHTML = '<p style="color:#C62828; text-align:center; margin-top:40px;">Fout bij inlezen PDF.<br><small>' + err.message + '</small></p>';
+  }
+}
+
+async function aiAnalyseerPdf() {
+  const apiKey = getSettings().anthropicApiKey;
+  if (!apiKey) { showToast('Stel een Anthropic API-key in bij Instellingen'); return; }
+  if (!huidigePdfTekst || huidigePdfTekst.length === 0) { showToast('Laad eerst een PDF'); return; }
+
+  const btn = document.getElementById('aiAnalyseBtn');
+  const statusEl = document.getElementById('pdfStatus');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ AI analyseert...'; }
+  if (statusEl) statusEl.textContent = '🤖 Bezig met AI-analyse van de vergunning...';
+
+  // Begrens tekst op 24.000 tekens om binnen tokenlimieten te blijven
+  const volledigeTekst = huidigePdfTekst.join('\n');
+  const tekst = volledigeTekst.length > 24000 ? volledigeTekst.substring(0, 24000) + '\n[tekst afgekapt]' : volledigeTekst;
+
+  const prompt = `Je bent een expert in Nederlandse omgevingsvergunningen en gemeentelijke VTH-processen. Analyseer de onderstaande tekst uit een vergunning-PDF en extraheer de gevraagde gegevens.
+
+Vergunning-tekst:
+---
+${tekst}
+---
+
+Geef je antwoord UITSLUITEND als geldig JSON (geen uitleg, geen markdown, geen backticks):
+{
+  "zaaknummer": "string of null",
+  "straat": "straatnaam inclusief huisnummer of null",
+  "postcode": "formaat 1234AB of null",
+  "plaats": "plaatsnaam of null",
+  "initiatiefnemer": "volledige naam van aanvrager of initiatiefnemer of null",
+  "activiteiten": "omschrijving van de hoofdactiviteit waarvoor de vergunning is verleend of null",
+  "datum": "vergunningsdatum in formaat DD-MM-YYYY of null",
+  "bestemmingsplan": "naam van het geldende bestemmingsplan of omgevingsplan of null",
+  "voorschriften": ["volledig voorschrift 1 inclusief nummer", "volledig voorschrift 2", ...]
+}
+
+Regels voor voorschriften:
+- Extraheer ALLE genummerde of aangeduide voorschriften, bepalingen en verbonden voorwaarden
+- Geef elk voorschrift als volledige zin inclusief artikelnummer of nummerprefix
+- Zoek ook in secties met namen als "Verbonden voorschriften", "Voorwaarden", "Bepalingen", "Vergunningsvoorschriften"
+- Als er geen voorschriften aanwezig zijn: geef een lege array []`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      let msg = `API fout ${response.status}`;
+      try { const j = JSON.parse(errText); msg += ': ' + (j.error?.message || errText); } catch(e) { msg += ': ' + errText.substring(0, 120); }
+      throw new Error(msg);
+    }
+
+    const data = await response.json();
+    const content = data.content[0].text.trim();
+
+    let extracted;
+    try {
+      // Strip eventuele markdown code-blocks
+      const cleaned = content.replace(/^```(?:json)?\n?/,'').replace(/\n?```$/,'').trim();
+      extracted = JSON.parse(cleaned);
+    } catch(parseErr) {
+      throw new Error('AI-respons kon niet worden verwerkt als JSON');
+    }
+
+    // Vul formuliervelden in (overschrijf alleen lege velden)
+    const veld = (id, waarde) => {
+      if (!waarde) return false;
+      const el = document.getElementById(id);
+      if (el && !el.value.trim()) { el.value = waarde; return true; }
+      return false;
+    };
+
+    let aantalVelden = 0;
+    if (veld('pi-zaaknummer',     extracted.zaaknummer))     aantalVelden++;
+    if (veld('pi-straat',         extracted.straat))         aantalVelden++;
+    if (veld('pi-postcode',       extracted.postcode))       aantalVelden++;
+    if (veld('pi-plaats',         extracted.plaats))         aantalVelden++;
+    if (veld('pi-initiatiefnemer',extracted.initiatiefnemer))aantalVelden++;
+    if (veld('pi-activiteiten',   extracted.activiteiten))   aantalVelden++;
+    if (veld('pi-datum',          extracted.datum))           aantalVelden++;
+    if (veld('pi-bestemmingsplan',extracted.bestemmingsplan))aantalVelden++;
+
+    // Voeg geëxtraheerde voorschriften toe
+    let aantalVoorschriften = 0;
+    if (Array.isArray(extracted.voorschriften)) {
+      extracted.voorschriften.forEach(v => {
+        if (v && v.trim()) { voegVoorschriftToeMetTekst(v.trim()); aantalVoorschriften++; }
+      });
+    }
+
+    if (statusEl) statusEl.textContent = `✓ AI: ${aantalVelden} veld(en) en ${aantalVoorschriften} voorschrift(en) gevonden`;
+    showToast(`✨ AI: ${aantalVelden} velden en ${aantalVoorschriften} voorschriften geëxtraheerd`);
+
+  } catch(err) {
+    if (statusEl) statusEl.textContent = '⚠️ AI-analyse mislukt: ' + err.message;
+    showToast('AI-analyse mislukt: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✨ AI Analyseren'; }
   }
 }
 
