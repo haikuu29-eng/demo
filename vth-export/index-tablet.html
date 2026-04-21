@@ -160,16 +160,18 @@ html, body { height: 100%; overflow: hidden; }
 .main-area {
   grid-row: 2; grid-column: 2;
   overflow: hidden;
-  display: flex; flex-direction: column;
   background: #F4F6F9;
-  position: relative;
-  min-height: 0;   /* Safari: grid cel mag krimpen in flex context */
-  height: 100%;    /* Safari: expliciete hoogte zodat kinderen height:100% kunnen oplossen */
+  position: relative; /* anchor voor absolute screens */
 }
 
-/* ===== SCREENS now live inside .main-area ===== */
-/* flex:1 + min-height:0 i.p.v. height:100% — betrouwbaarder in Safari/flex context */
-.screen { display: none; flex-direction: column; overflow: hidden; flex: 1; min-height: 0; }
+/* ===== SCREENS — absoluut gepositioneerd binnen .main-area =====
+   Voorkomt hoogte-berekeningsproblemen in Safari (grid→flex chain).
+   Elke screen vult de volledige .main-area via top/right/bottom/left. */
+.screen {
+  display: none;
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  flex-direction: column; overflow: hidden;
+}
 .screen.active { display: flex; }
 
 /* ===== SPLIT VIEW (projectDetail) ===== */
