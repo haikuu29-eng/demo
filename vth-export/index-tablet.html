@@ -1683,8 +1683,10 @@ html, body { height: 100%; overflow: hidden; }
         <img id="logoPreview" src="" style="max-width:120px; display:block; border-radius:6px; border:1px solid var(--border); margin-bottom:8px;">
         <button class="btn btn-danger" onclick="removeLogo()" style="font-size:14px; padding:8px 16px;">Logo verwijderen</button>
       </div>
-      <input type="file" accept="image/*" id="logoInput" style="position:absolute;opacity:0;width:0;height:0;" onchange="handleLogoUpload(event)">
-      <button class="btn btn-secondary btn-block" onclick="document.getElementById('logoInput').click()">&#128444; Logo uploaden</button>
+      <div style="position:relative;">
+        <button class="btn btn-secondary btn-block" style="pointer-events:none;">&#128444; Logo uploaden</button>
+        <input type="file" accept="image/*" id="logoInput" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handleLogoUpload(event)">
+      </div>
     </div>
 
     <div class="settings-card">
@@ -1832,8 +1834,10 @@ html, body { height: 100%; overflow: hidden; }
 
     <div class="form-section-title" style="margin-top:16px;">Foto's bij dit onderwerp</div>
     <div id="om-fotoGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap:10px; margin-bottom:12px;"></div>
-    <input type="file" accept="image/*" capture="environment" id="om-fotoInput" style="position:absolute;opacity:0;width:0;height:0;" onchange="handleOnderwerpFotoUpload(event)">
-    <button class="btn btn-secondary btn-block" style="margin-bottom:4px;" onclick="document.getElementById('om-fotoInput').click()">📷 Foto toevoegen</button>
+    <div style="position:relative; margin-bottom:4px;">
+      <button class="btn btn-secondary btn-block" style="pointer-events:none;">📷 Foto toevoegen</button>
+      <input type="file" accept="image/*" capture="environment" id="om-fotoInput" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handleOnderwerpFotoUpload(event)">
+    </div>
 
     <div class="form-section-title" style="margin-top:16px;">Vergunningsvoorschriften</div>
     <div id="om-voorschriftenContainer">
@@ -1855,11 +1859,13 @@ html, body { height: 100%; overflow: hidden; }
     <div style="flex:1; border-right:2px solid var(--border); display:flex; flex-direction:column; min-width:0;">
       <!-- Upload zone -->
       <div id="pdfUploadZone" style="padding:16px; background:var(--primary-light); border-bottom:1px solid var(--border); flex-shrink:0;">
-        <input type="file" accept="application/pdf" id="pdfFileInput" style="position:absolute; opacity:0; width:0; height:0;" onchange="handlePdfUpload(event)">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <button onclick="document.getElementById('pdfFileInput').click()" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:var(--primary); background:none; border:none; font-size:inherit; flex-shrink:0; padding:0;">
-            &#128194; PDF selecteren
-          </button>
+          <div style="position:relative; display:inline-flex;">
+            <button style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:var(--primary); background:none; border:none; font-size:inherit; flex-shrink:0; padding:0; pointer-events:none;">
+              &#128194; PDF selecteren
+            </button>
+            <input type="file" accept=".pdf,application/pdf" id="pdfFileInput" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;" onchange="handlePdfUpload(event)">
+          </div>
           <button id="aiAnalyseBtn" onclick="aiAnalyseerPdf()" style="display:none; background:#1B4B6B; color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0;">✨ AI Analyseren</button>
         </div>
         <p id="pdfStatus" style="font-size:12px; color:var(--text-secondary); margin-top:6px;">Nog geen bestand geladen</p>
@@ -7083,8 +7089,10 @@ function renderControleDetail() {
     <div class="settings-card" style="margin-top:12px;">
       <h3>Foto's</h3>
       <div id="fotoGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom:12px;"></div>
-      <input type="file" accept="image/*" capture="environment" id="fotoInput" style="position:absolute;opacity:0;width:0;height:0;" onchange="handleFotoUpload(event)">
-      <button class="btn btn-secondary btn-block" onclick="document.getElementById('fotoInput').click()">&#128247; Foto toevoegen</button>
+      <div style="position:relative;">
+        <button class="btn btn-secondary btn-block" style="pointer-events:none;">&#128247; Foto toevoegen</button>
+        <input type="file" accept="image/*" capture="environment" id="fotoInput" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handleFotoUpload(event)">
+      </div>
     </div>
   `;
 
