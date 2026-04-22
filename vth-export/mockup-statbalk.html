@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup: Statbalk varianten</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F4F8; padding: 24px; }
+  h2 { font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; margin-top: 24px; }
+  h2:first-child { margin-top: 0; }
+  .label { display: inline-block; background: #1B3A52; color: #fff; font-size: 10px; font-weight: 700; border-radius: 4px; padding: 2px 7px; margin-bottom: 6px; letter-spacing: .5px; }
+  .label.groen { background: #2E7D32; }
+
+  /* ── shared topbar chrome ── */
+  .chrome { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.10); overflow: hidden; }
+  .topbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; background: #1B3A52;
+  }
+  .tb-logo { font-size: 11px; font-weight: 800; color: #fff; flex: 1; }
+  .tb-search {
+    background: rgba(255,255,255,.15); border: none; border-radius: 8px;
+    color: #fff; font-size: 12px; padding: 5px 10px; width: 180px; outline: none;
+  }
+  .tb-search::placeholder { color: rgba(255,255,255,.55); }
+  .tb-avatar {
+    width: 30px; height: 30px; border-radius: 50%; background: #E65100;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+
+  /* toolbar row */
+  .toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; background: #fff; border-bottom: 1px solid #E8EDF3;
+    flex-wrap: wrap;
+  }
+  .btn { background: #1B3A52; color: #fff; border: none; border-radius: 7px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn.sec { background: #E8EDF3; color: #444; }
+  select { font-size: 12px; border: 1px solid #D0D8E4; border-radius: 6px; padding: 5px 8px; color: #444; background: #fff; }
+  .spacer { flex: 1; }
+
+  /* filter chips */
+  .filter-row {
+    display: flex; gap: 6px; padding: 8px 14px;
+    overflow-x: auto; background: #fff; border-bottom: 1px solid #E8EDF3;
+    scrollbar-width: none;
+  }
+  .chip {
+    white-space: nowrap; font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 20px; background: #F0F4F8; color: #555; border: 1px solid #D8E0EA;
+    cursor: pointer; user-select: none;
+  }
+  .chip.active { background: #1B3A52; color: #fff; border-color: #1B3A52; }
+
+  /* ══ HUIDIG: grote stat-cards ══ */
+  .stat-row-oud {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; padding: 12px 16px; background: #F0F4F8;
+  }
+  .stat-card {
+    background: #fff; border-radius: 10px; padding: 10px 12px;
+    border: 1px solid #E0E5EC; text-align: center;
+  }
+  .stat-card.hi { background: #1B3A52; border-color: #1B3A52; }
+  .sv { font-size: 22px; font-weight: 800; color: #1B3A52; line-height: 1; }
+  .sl { font-size: 10px; color: #888; margin-top: 2px; font-weight: 500; }
+  .stat-card.hi .sv { color: #fff; }
+  .stat-card.hi .sl { color: rgba(255,255,255,.6); }
+
+  /* ══ OPTIE A: inline stat-pills in toolbar ══ */
+  .stat-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: #F0F4F8; border: 1px solid #D8E0EA;
+    border-radius: 20px; padding: 4px 10px;
+    font-size: 12px; white-space: nowrap;
+  }
+  .stat-pill .num { font-weight: 800; font-size: 14px; color: #1B3A52; }
+  .stat-pill.oranje .num { color: #E65100; }
+  .stat-pill.groen .num { color: #2E7D32; }
+  .divider { width: 1px; height: 20px; background: #D8E0EA; }
+
+  /* ══ OPTIE B: count badges OP de filter-chips ══ */
+  .chip-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .badge {
+    background: #E65100; color: #fff; font-size: 9px; font-weight: 800;
+    border-radius: 10px; padding: 1px 5px; line-height: 1.4;
+  }
+  .badge.grijs { background: #9E9E9E; }
+  .badge.groen { background: #2E7D32; }
+  .badge.paars { background: #7B1FA2; }
+  .chip.active .badge { background: rgba(255,255,255,.35); }
+
+  /* ══ OPTIE C: slanke telbalk ══ */
+  .stat-strip {
+    display: flex; align-items: center; gap: 0;
+    padding: 5px 14px; background: #fff; border-bottom: 1px solid #E8EDF3;
+  }
+  .strip-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 14px 3px 0; margin-right: 14px;
+    border-right: 1px solid #E8EDF3;
+  }
+  .strip-item:last-child { border-right: none; margin-right: 0; }
+  .strip-dot { width: 8px; height: 8px; border-radius: 50%; background: #1B3A52; flex-shrink: 0; }
+  .strip-dot.oranje { background: #E65100; }
+  .strip-dot.groen  { background: #2E7D32; }
+  .strip-dot.grijs  { background: #9E9E9E; }
+  .strip-n { font-size: 15px; font-weight: 800; color: #1B3A52; line-height: 1; }
+  .strip-n.oranje { color: #E65100; }
+  .strip-n.groen  { color: #2E7D32; }
+  .strip-l { font-size: 10px; color: #888; font-weight: 500; }
+
+  /* list placeholder */
+  .list-ph { padding: 14px 16px; background: #F0F4F8; }
+  .card-ph { background: #fff; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid #E8EDF3; font-size: 12px; color: #555; }
+
+  /* layout */
+  .variants { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 900px) { .variants { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div style="max-width:960px; margin:0 auto;">
+
+<!-- ══════════════ HUIDIG ══════════════ -->
+<h2>Huidig — grote stat-cards (4 blokken)</h2>
+<div class="label">HUIDIG</div>
+<div class="chrome" style="max-width:500px;">
+  <div class="topbar">
+    <span class="tb-logo">OmgevingsCheck</span>
+    <input class="tb-search" placeholder="Zoek project, adres, zaaknr..." disabled>
+    <div class="tb-avatar">CK</div>
+  </div>
+  <div class="toolbar">
+    <select disabled><option>Laatste controle</option></select>
+    <div class="spacer"></div>
+    <button class="btn sec">📅 Vandaag</button>
+    <button class="btn">＋ Nieuw project</button>
+  </div>
+  <div class="filter-row">
+    <div class="chip active">Alle</div>
+    <div class="chip">Toezicht omgevingsvergunning</div>
+    <div class="chip">Melding handhaving</div>
+    <div class="chip">Handhavingsverzoek</div>
+    <div class="chip">Nog niet gestart</div>
+    <div class="chip">In uitvoering</div>
+    <div class="chip">Gereed</div>
+    <div class="chip">In te trekken</div>
+  </div>
+  <!-- GROTE STAT CARDS -->
+  <div class="stat-row-oud">
+    <div class="stat-card hi"><div class="sv">13</div><div class="sl">Actieve zaken</div></div>
+    <div class="stat-card"><div class="sv" style="color:#E65100;">1</div><div class="sl">In uitvoering</div></div>
+    <div class="stat-card"><div class="sv" style="color:#1B6B6B;">0</div><div class="sl">Controles (7 dgn)</div></div>
+    <div class="stat-card"><div class="sv" style="color:#2E7D32;">0</div><div class="sl">Gereed</div></div>
+  </div>
+  <div class="list-ph">
+    <div class="card-ph">📍 Ekenrooisestraat 16, Waalre — <strong>In uitvoering</strong></div>
+  </div>
+</div>
+
+<!-- ══════════════ VARIANTEN ══════════════ -->
+<h2 style="margin-top:36px;">Voorstellen — 3 varianten</h2>
+<div class="variants">
+
+  <!-- ── OPTIE A ── -->
+  <div>
+    <div class="label">OPTIE A — Inline stat-pills in toolbar</div>
+    <p style="font-size:11px; color:#666; margin-bottom:8px;">Compacte ronde badges in de toolbarbalk zelf. Stat-blokken volledig weg.</p>
+    <div class="chrome">
+      <div class="topbar">
+        <span class="tb-logo">OmgevingsCheck</span>
+        <input class="tb-search" placeholder="Zoek project, adres, zaaknr..." disabled>
+        <div class="tb-avatar">CK</div>
+      </div>
+      <div class="toolbar">
+        <!-- stat pills links in toolbar -->
+        <div class="stat-pill"><span class="num">13</span><span style="font-size:11px;color:#888;">zaken</span></div>
+        <div class="divider"></div>
+        <div class="stat-pill oranje"><span class="num">1</span><span style="font-size:11px;color:#888;">uitvoering</span></div>
+        <div class="divider"></div>
+        <div class="stat-pill groen"><span class="num">0</span><span style="font-size:11px;color:#888;">gereed</span></div>
+        <div class="spacer"></div>
+        <select disabled><option>Laatste controle</option></select>
+        <button class="btn sec">📅 Vandaag</button>
+        <button class="btn">＋ Nieuw</button>
+      </div>
+      <div class="filter-row">
+        <div class="chip active">Alle</div>
+        <div class="chip">Toezicht omg.</div>
+        <div class="chip">Melding handh.</div>
+        <div class="chip">Handhavingsverzoek</div>
+        <div class="chip">Nog niet gestart</div>
+        <div class="chip">In uitvoering</div>
+        <div class="chip">Gereed</div>
+        <div class="chip">In te trekken</div>
+      </div>
+      <div class="list-ph">
+        <div class="card-ph">📍 Ekenrooisestraat 16, Waalre — <strong>In uitvoering</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── OPTIE B ── -->
+  <div>
+    <div class="label">OPTIE B — Aantallen als badge OP de filter-chips</div>
+    <p style="font-size:11px; color:#666; margin-bottom:8px;">Elke status-chip toont het aantal als kleine badge. Stat-rij weg, toolbar compact.</p>
+    <div class="chrome">
+      <div class="topbar">
+        <span class="tb-logo">OmgevingsCheck</span>
+        <input class="tb-search" placeholder="Zoek project, adres, zaaknr..." disabled>
+        <div class="tb-avatar">CK</div>
+      </div>
+      <div class="toolbar">
+        <select disabled><option>Laatste controle</option></select>
+        <div class="spacer"></div>
+        <button class="btn sec">📅 Vandaag</button>
+        <button class="btn">＋ Nieuw project</button>
+      </div>
+      <div class="filter-row">
+        <div class="chip active chip-badge">Alle <span class="badge" style="background:rgba(255,255,255,.35);">13</span></div>
+        <div class="chip">Toezicht omg.</div>
+        <div class="chip">Melding handh.</div>
+        <div class="chip">Handhavingsverzoek</div>
+        <div class="chip chip-badge">Nog niet gestart <span class="badge grijs">5</span></div>
+        <div class="chip chip-badge">In uitvoering <span class="badge">1</span></div>
+        <div class="chip chip-badge">Gereed <span class="badge groen">0</span></div>
+        <div class="chip chip-badge">In te trekken <span class="badge paars">0</span></div>
+      </div>
+      <div class="list-ph">
+        <div class="card-ph">📍 Ekenrooisestraat 16, Waalre — <strong>In uitvoering</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── OPTIE C ── -->
+  <div>
+    <div class="label groen">OPTIE C — Slanke telbalk (aanbevolen)</div>
+    <p style="font-size:11px; color:#666; margin-bottom:8px;">Één dunne balk met gekleurde stippen + cijfers direct boven de lijst. ±28px hoog vs. ±72px nu.</p>
+    <div class="chrome">
+      <div class="topbar">
+        <span class="tb-logo">OmgevingsCheck</span>
+        <input class="tb-search" placeholder="Zoek project, adres, zaaknr..." disabled>
+        <div class="tb-avatar">CK</div>
+      </div>
+      <div class="toolbar">
+        <select disabled><option>Laatste controle</option></select>
+        <div class="spacer"></div>
+        <button class="btn sec">📅 Vandaag</button>
+        <button class="btn">＋ Nieuw project</button>
+      </div>
+      <div class="filter-row">
+        <div class="chip active">Alle</div>
+        <div class="chip">Toezicht omg.</div>
+        <div class="chip">Melding handh.</div>
+        <div class="chip">Handhavingsverzoek</div>
+        <div class="chip">Nog niet gestart</div>
+        <div class="chip">In uitvoering</div>
+        <div class="chip">Gereed</div>
+        <div class="chip">In te trekken</div>
+      </div>
+      <!-- SLANKE TELBALK -->
+      <div class="stat-strip">
+        <div class="strip-item">
+          <div class="strip-dot"></div>
+          <div>
+            <div class="strip-n">13</div>
+            <div class="strip-l">Actieve zaken</div>
+          </div>
+        </div>
+        <div class="strip-item">
+          <div class="strip-dot grijs"></div>
+          <div>
+            <div class="strip-n" style="color:#9E9E9E;">5</div>
+            <div class="strip-l">Nog niet gestart</div>
+          </div>
+        </div>
+        <div class="strip-item">
+          <div class="strip-dot oranje"></div>
+          <div>
+            <div class="strip-n oranje">1</div>
+            <div class="strip-l">In uitvoering</div>
+          </div>
+        </div>
+        <div class="strip-item">
+          <div class="strip-dot groen"></div>
+          <div>
+            <div class="strip-n groen">0</div>
+            <div class="strip-l">Gereed</div>
+          </div>
+        </div>
+        <div class="strip-item">
+          <div class="strip-dot" style="background:#7B1FA2;"></div>
+          <div>
+            <div class="strip-n" style="color:#7B1FA2;">0</div>
+            <div class="strip-l">In te trekken</div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <span style="font-size:10px;color:#AAB4C0;">7-dgn controles: <strong style="color:#1B3A52;">0</strong></span>
+      </div>
+      <div class="list-ph">
+        <div class="card-ph">📍 Ekenrooisestraat 16, Waalre — <strong>In uitvoering</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── OPTIE A+B COMBO ── -->
+  <div>
+    <div class="label">OPTIE A+B — Combo: pills in toolbar + badges op chips</div>
+    <p style="font-size:11px; color:#666; margin-bottom:8px;">Totaalcijfer in toolbar, detail-aantallen op de status-chips.</p>
+    <div class="chrome">
+      <div class="topbar">
+        <span class="tb-logo">OmgevingsCheck</span>
+        <input class="tb-search" placeholder="Zoek project, adres, zaaknr..." disabled>
+        <div class="tb-avatar">CK</div>
+      </div>
+      <div class="toolbar">
+        <div class="stat-pill"><span class="num">13</span><span style="font-size:11px;color:#888;">zaken</span></div>
+        <div class="spacer"></div>
+        <select disabled><option>Laatste controle</option></select>
+        <button class="btn sec">📅 Vandaag</button>
+        <button class="btn">＋ Nieuw</button>
+      </div>
+      <div class="filter-row">
+        <div class="chip active chip-badge">Alle <span class="badge" style="background:rgba(255,255,255,.35);">13</span></div>
+        <div class="chip">Toezicht omg.</div>
+        <div class="chip">Melding handh.</div>
+        <div class="chip">Handhavingsverzoek</div>
+        <div class="chip chip-badge">Nog niet gestart <span class="badge grijs">5</span></div>
+        <div class="chip chip-badge">In uitvoering <span class="badge">1</span></div>
+        <div class="chip chip-badge">Gereed <span class="badge groen">0</span></div>
+        <div class="chip chip-badge">In te trekken <span class="badge paars">0</span></div>
+      </div>
+      <div class="list-ph">
+        <div class="card-ph">📍 Ekenrooisestraat 16, Waalre — <strong>In uitvoering</strong></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /variants -->
+
+<p style="margin-top:28px; font-size:11px; color:#AAB4C0;">Zeg welke optie (of combinatie) je wilt — dan voer ik die direct door in de app.</p>
+</div>
+</body>
+</html>

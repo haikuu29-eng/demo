@@ -1,0 +1,9 @@
+[build]
+  base    = "vth-export"
+  publish = "vth-export"
+  functions = "vth-export/netlify/functions"
+
+[[redirects]]
+  from   = "/"
+  to     = "/index-tablet.html"
+  status = 200

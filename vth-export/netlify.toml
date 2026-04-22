@@ -1,0 +1,9 @@
+[build]
+  functions = "netlify/functions"
+  publish   = "."
+
+# Zorg dat index-tablet.html direct bereikbaar is als startpagina
+[[redirects]]
+  from   = "/"
+  to     = "/index-tablet.html"
+  status = 200

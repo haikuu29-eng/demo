@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>OmgevingsCheck — Internetverbindingen overzicht</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 12pt; color: #212121; margin: 40px; max-width: 800px; }
+  h1 { color: #1B6B6B; font-size: 20pt; border-bottom: 3px solid #1B6B6B; padding-bottom: 10px; margin-bottom: 6px; }
+  h2 { color: #1B6B6B; font-size: 13pt; margin-top: 28px; margin-bottom: 6px; }
+  .meta { color: #757575; font-size: 10pt; margin-bottom: 30px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11pt; }
+  th { background: #1B6B6B; color: #fff; padding: 10px 12px; text-align: left; }
+  td { padding: 9px 12px; border-bottom: 1px solid #E0E0E0; vertical-align: top; }
+  tr:nth-child(even) td { background: #F5F5F5; }
+  .label { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10pt; font-weight: bold; }
+  .laag { background: #E8F5E9; color: #2E7D32; }
+  .nvt { background: #F5F5F5; color: #757575; }
+  .sectie { margin-top: 36px; }
+  .kader { border: 1px solid #B0BEC5; border-radius: 6px; padding: 14px 18px; background: #FAFAFA; margin-top: 12px; font-size: 11pt; }
+  .kader ul { margin: 6px 0; padding-left: 20px; }
+  .kader li { margin-bottom: 4px; }
+  footer { margin-top: 50px; border-top: 1px solid #E0E0E0; padding-top: 10px; font-size: 9pt; color: #9E9E9E; }
+  @media print {
+    body { margin: 20px; }
+    a { color: #1B6B6B; }
+  }
+</style>
+</head>
+<body>
+
+<h1>OmgevingsCheck</h1>
+<p class="meta">Overzicht internetverbindingen &amp; gegevensverstrekking aan derden<br>
+Versie 1.0 — 29 maart 2026 — Opgesteld door: Christian Krielen</p>
+
+<h2>Inleiding</h2>
+<p>OmgevingsCheck is een offline-first webapp voor gemeentelijk bouwtoezicht. Alle projectdata, controles en foto's worden uitsluitend lokaal opgeslagen op het apparaat van de gebruiker. Dit document beschrijft de vier momenten waarop de app een internetverbinding gebruikt en welke gegevens daarbij worden uitgewisseld.</p>
+
+<div class="sectie">
+<h2>1. Overzicht van internetverbindingen</h2>
+<table>
+  <tr>
+    <th>#</th>
+    <th>Functie</th>
+    <th>Wanneer</th>
+    <th>Bestemming</th>
+    <th>Verstuurde gegevens</th>
+    <th>Risico</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td><strong>Leaflet.js laden</strong></td>
+    <td>Bij elke start van de app</td>
+    <td>unpkg.com (npm CDN)</td>
+    <td>Bestandsaanvraag — geen persoonsgegevens</td>
+    <td><span class="label laag">Laag</span></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>Kaarttegels OpenStreetMap</strong></td>
+    <td>Alleen bij openen kaartweergave</td>
+    <td>tile.openstreetmap.org</td>
+    <td>Coördinaten van het bekeken kaartgebied — geen project- of persoonsgegevens</td>
+    <td><span class="label laag">Laag</span></td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>PDOK geocoding</strong><br>(adres → coördinaten)</td>
+    <td>Bij opslaan van een project met adresgegevens</td>
+    <td>api.pdok.nl (Rijksoverheid)</td>
+    <td>Straat, postcode en plaatsnaam van het bouwproject</td>
+    <td><span class="label laag">Laag</span></td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>E-mail (Mailen knop)</strong></td>
+    <td>Bij gebruik van de mailknop</td>
+    <td>Lokale e-mailapp (Outlook) — geen internet</td>
+    <td>Geen — verwerking vindt lokaal plaats</td>
+    <td><span class="label nvt">Niet van toepassing</span></td>
+  </tr>
+</table>
+</div>
+
+<div class="sectie">
+<h2>2. Toelichting per verbinding</h2>
+
+<h2 style="font-size:12pt; color:#424242;">1 — Leaflet.js bibliotheek</h2>
+<p>De kaartbibliotheek Leaflet.js wordt geladen vanaf <em>unpkg.com</em>, een openbaar CDN (Content Delivery Network) voor npm-pakketten. Er worden geen gebruikersgegevens of app-data meegestuurd. De aanvraag is vergelijkbaar met het laden van een lettertype via Google Fonts.</p>
+
+<h2 style="font-size:12pt; color:#424242;">2 — OpenStreetMap kaarttegels</h2>
+<p>Bij het openen van de kaartweergave worden kaarttegels geladen van OpenStreetMap. OpenStreetMap is een non-profit stichting (OSMF). De enige gegevens die worden verstuurd zijn de geografische coördinaten van het kaartgebied dat de gebruiker bekijkt. Projectnamen, zaaknummers of persoonsgegevens worden niet verstuurd.</p>
+
+<h2 style="font-size:12pt; color:#424242;">3 — PDOK geocoding</h2>
+<p>Bij het opslaan van een project stuurt de app het adres (straat, postcode, plaats) naar de PDOK Locatieserver van de Rijksoverheid. PDOK retourneert enkel de bijbehorende coördinaten (breedtegraad en lengtegraad). Er worden geen persoonsgegevens verstuurd. PDOK valt onder het Ministerie van Binnenlandse Zaken en voldoet aan de AVG.</p>
+
+<h2 style="font-size:12pt; color:#424242;">4 — E-mail via Outlook</h2>
+<p>De mailknop opent de lokaal geïnstalleerde e-mailapp (Microsoft Outlook) met een vooringevuld rapport. Er vindt geen rechtstreekse verzending via de app of een externe server plaats. De gebruiker verstuurt de e-mail zelf vanuit Outlook.</p>
+</div>
+
+<div class="sectie">
+<h2>3. Wat blijft volledig lokaal</h2>
+<div class="kader">
+  <ul>
+    <li>Alle projectgegevens (naam, adres, zaaknummer, type)</li>
+    <li>Alle controles en bevindingen</li>
+    <li>Foto's (opgeslagen als base64 in de browser)</li>
+    <li>Vergunningsvoorschriften</li>
+    <li>BBL-artikelen (352 artikelen ingebakken in de app)</li>
+    <li>Instellingen (gemeentenaam, toezichthouder, logo)</li>
+    <li>Backup-bestanden (lokale download)</li>
+    <li>PDF-rapportage (via browser printfunctie)</li>
+  </ul>
+</div>
+</div>
+
+<div class="sectie">
+<h2>4. AVG-beoordeling</h2>
+<p>Op basis van bovenstaand overzicht worden geen bijzondere persoonsgegevens verstuurd naar externe partijen. De enige externe gegevensverstrekking betreft adresgegevens van bouwprojecten aan PDOK (Rijksoverheid). Dit valt niet onder verwerking van persoonsgegevens in de zin van de AVG. Een verwerkersovereenkomst met PDOK is niet vereist.</p>
+</div>
+
+<footer>
+  © 2026 Christian Krielen — alle rechten voorbehouden &nbsp;|&nbsp; OmgevingsCheck v1.0
+</footer>
+
+</body>
+</html>
