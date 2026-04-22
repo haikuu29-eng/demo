@@ -1683,10 +1683,7 @@ html, body { height: 100%; overflow: hidden; }
         <img id="logoPreview" src="" style="max-width:120px; display:block; border-radius:6px; border:1px solid var(--border); margin-bottom:8px;">
         <button class="btn btn-danger" onclick="removeLogo()" style="font-size:14px; padding:8px 16px;">Logo verwijderen</button>
       </div>
-      <label class="btn btn-secondary btn-block" style="cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;">
-        &#128444; Logo uploaden
-        <input type="file" accept="image/*" id="logoInput" style="position:fixed; left:-9999px; top:-9999px;" onchange="handleLogoUpload(event)">
-      </label>
+      <button class="btn btn-secondary btn-block" onclick="openLogoFilePicker()">&#128444; Logo uploaden</button>
     </div>
 
     <div class="settings-card">
@@ -1834,10 +1831,7 @@ html, body { height: 100%; overflow: hidden; }
 
     <div class="form-section-title" style="margin-top:16px;">Foto's bij dit onderwerp</div>
     <div id="om-fotoGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap:10px; margin-bottom:12px;"></div>
-    <label class="btn btn-secondary btn-block" style="cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; margin-bottom:4px;">
-      📷 Foto toevoegen
-      <input type="file" accept="image/*" capture="environment" id="om-fotoInput" style="position:fixed; left:-9999px; top:-9999px;" onchange="handleOnderwerpFotoUpload(event)">
-    </label>
+    <button class="btn btn-secondary btn-block" style="margin-bottom:4px;" onclick="openOnderwerpFotoFilePicker()">&#128247; Foto toevoegen</button>
 
     <div class="form-section-title" style="margin-top:16px;">Vergunningsvoorschriften</div>
     <div id="om-voorschriftenContainer">
@@ -1860,10 +1854,9 @@ html, body { height: 100%; overflow: hidden; }
       <!-- Upload zone -->
       <div id="pdfUploadZone" style="padding:16px; background:var(--primary-light); border-bottom:1px solid var(--border); flex-shrink:0;">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:var(--primary); touch-action:manipulation; -webkit-tap-highlight-color:transparent;">
+          <button onclick="openPdfFilePicker()" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:var(--primary); background:none; border:none; font-size:inherit; flex-shrink:0; padding:4px 0; min-height:44px;">
             &#128194; PDF selecteren
-            <input type="file" accept=".pdf,application/pdf" id="pdfFileInput" style="position:fixed; left:-9999px; top:-9999px;" onchange="handlePdfUpload(event)">
-          </label>
+          </button>
           <button id="aiAnalyseBtn" onclick="aiAnalyseerPdf()" style="display:none; background:#1B4B6B; color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0;">✨ AI Analyseren</button>
         </div>
         <p id="pdfStatus" style="font-size:12px; color:var(--text-secondary); margin-top:6px;">Nog geen bestand geladen</p>
@@ -7087,10 +7080,7 @@ function renderControleDetail() {
     <div class="settings-card" style="margin-top:12px;">
       <h3>Foto's</h3>
       <div id="fotoGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom:12px;"></div>
-      <label class="btn btn-secondary btn-block" style="cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;">
-        &#128247; Foto toevoegen
-        <input type="file" accept="image/*" capture="environment" id="fotoInput" style="position:fixed; left:-9999px; top:-9999px;" onchange="handleFotoUpload(event)">
-      </label>
+      <button class="btn btn-secondary btn-block" onclick="openFotoFilePicker()">&#128247; Foto toevoegen</button>
     </div>
   `;
 
@@ -7613,8 +7603,7 @@ function getFotosForOnderwerp(onderwerpId) {
   } catch(e) { return []; }
 }
 
-function handleOnderwerpFotoUpload(event) {
-  const file = event.target.files[0];
+function handleOnderwerpFotoFile(file) {
   if (!file || !currentOnderwerpId) return;
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -7628,8 +7617,6 @@ function handleOnderwerpFotoUpload(event) {
     };
     saveFoto(foto);
     renderOnderwerpFotoGrid(currentOnderwerpId);
-    const inp = document.getElementById('om-fotoInput');
-    if (inp) inp.value = '';
   };
   reader.readAsDataURL(file);
 }
@@ -7682,8 +7669,7 @@ function deleteFoto(fotoId) {
 }
 
 // ===== FOTO UPLOAD =====
-function handleFotoUpload(event) {
-  const file = event.target.files[0];
+function handleFotoFile(file) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -7696,8 +7682,6 @@ function handleFotoUpload(event) {
     };
     saveFoto(foto);
     renderFotoGrid(currentControleId);
-    const inp = document.getElementById('fotoInput');
-    if (inp) inp.value = '';
   };
   reader.readAsDataURL(file);
 }
@@ -7736,8 +7720,7 @@ function updateFotoToelichting(fotoId, toelichting) {
 }
 
 // ===== LOGO FUNCTIES =====
-function handleLogoUpload(event) {
-  const file = event.target.files[0];
+function handleLogoFile(file) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -7764,8 +7747,6 @@ function showLogoPreview(dataUrl) {
 function removeLogo() {
   storage.removeItem('vth_logo');
   showLogoPreview(null);
-  const inp = document.getElementById('logoInput');
-  if (inp) inp.value = '';
   showToast('Logo verwijderd');
 }
 
@@ -8095,6 +8076,30 @@ function updateToetsniveauInfo(onderwerpNaam) {
   }
 }
 
+// ===== BESTAND KIEZER =====
+// Dynamisch aanmaken van input binnen click-event: bypassed Safari overflow:hidden
+// clipping én de iOS-beveiliging tegen input.click() op bestaande elementen.
+function _pickFile(accept, capture, callback) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = accept;
+  if (capture) input.setAttribute('capture', capture);
+  input.style.cssText = 'position:fixed;top:-200px;left:-200px;opacity:0;width:1px;height:1px;';
+  document.body.appendChild(input);
+  input.addEventListener('change', function() {
+    if (input.files && input.files[0]) callback(input.files[0]);
+    if (document.body.contains(input)) document.body.removeChild(input);
+  });
+  input.addEventListener('cancel', function() {
+    if (document.body.contains(input)) document.body.removeChild(input);
+  });
+  input.click();
+}
+function openPdfFilePicker()           { _pickFile('.pdf,application/pdf', null,          function(f){ handlePdfFile(f); }); }
+function openFotoFilePicker()          { _pickFile('image/*',              'environment',  function(f){ handleFotoFile(f); }); }
+function openOnderwerpFotoFilePicker() { _pickFile('image/*',              'environment',  function(f){ handleOnderwerpFotoFile(f); }); }
+function openLogoFilePicker()          { _pickFile('image/*',              null,           function(f){ handleLogoFile(f); }); }
+
 // ===== PDF IMPORT =====
 let huidigePdfTekst = null;
 let geselecteerdePdfTekst = '';
@@ -8186,8 +8191,7 @@ async function extractPdfText(arrayBuffer) {
   }
 }
 
-async function handlePdfUpload(event) {
-  const file = event.target.files[0];
+async function handlePdfFile(file) {
   if (!file) return;
   document.getElementById('pdfStatus').textContent = 'Bezig met laden...';
   document.getElementById('pdfTekstContainer').innerHTML = '<p style="color:var(--text-secondary); text-align:center; margin-top:40px;">⏳ PDF wordt gelezen...</p>';
@@ -8526,8 +8530,6 @@ function resetPdfImportScherm() {
   if (statusEl) statusEl.textContent = 'Nog geen bestand geladen';
   const container = document.getElementById('pdfTekstContainer');
   if (container) container.innerHTML = '<p style="color:var(--text-secondary); text-align:center; margin-top:40px;">Laad een PDF om de tekst hier te zien</p>';
-  const fileInput = document.getElementById('pdfFileInput');
-  if (fileInput) fileInput.value = '';
   ['pi-naam','pi-zaaknummer','pi-straat','pi-postcode','pi-plaats','pi-initiatiefnemer','pi-datum','pi-bestemmingsplan'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
