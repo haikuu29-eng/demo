@@ -8223,6 +8223,13 @@ async function aiAnalyseerPdf() {
   if (!apiKey) { showToast('Stel een Anthropic API-key in bij Instellingen'); return; }
   if (!huidigePdfTekst || huidigePdfTekst.length === 0) { showToast('Laad eerst een PDF'); return; }
 
+  // Diagnose: file:// protocol werkt niet voor externe API-calls
+  if (window.location.protocol === 'file:') {
+    showToast('⚠️ AI werkt niet via file://. Open de app via een webserver (http://).');
+    document.getElementById('pdfStatus').textContent = '⚠️ Kan API niet bereiken via file://. Gebruik een webserver.';
+    return;
+  }
+
   const btn = document.getElementById('aiAnalyseBtn');
   const statusEl = document.getElementById('pdfStatus');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ AI analyseert...'; }
@@ -8323,8 +8330,14 @@ Regels voor voorschriften:
     showToast(`✨ AI: ${aantalVelden} velden en ${aantalVoorschriften} voorschriften geëxtraheerd`);
 
   } catch(err) {
-    if (statusEl) statusEl.textContent = '⚠️ AI-analyse mislukt: ' + err.message;
-    showToast('AI-analyse mislukt: ' + err.message);
+    // Diagnose specifieke foutsoorten
+    let uitleg = err.message || 'onbekende fout';
+    const isNetwerk = /load failed|failed to fetch|network/i.test(uitleg);
+    if (isNetwerk) {
+      uitleg = 'Netwerk/CORS-fout — controleer: 1) internetverbinding, 2) Safari "Prevent Cross-Site Tracking" uit, 3) app via http:// (niet file://)';
+    }
+    if (statusEl) statusEl.textContent = '⚠️ AI-analyse mislukt: ' + uitleg;
+    showToast('AI mislukt: ' + (isNetwerk ? 'netwerkfout — zie statusbalk' : err.message));
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '✨ AI Analyseren'; }
   }
