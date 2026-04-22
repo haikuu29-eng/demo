@@ -1674,6 +1674,15 @@ html, body { height: 100%; overflow: hidden; }
           style="font-family:monospace; font-size:12px;" autocomplete="off">
         <p style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Optioneel. Ingesteld = knop "✨ AI Analyseren" verschijnt bij PDF-import.</p>
       </div>
+      <div class="form-group">
+        <label>AI Proxy URL <span style="font-size:12px; color:var(--text-secondary);">(vereist voor AI in browser)</span></label>
+        <input type="url" id="set-ai-proxy" placeholder="https://jouwserver.nl/ai-proxy.php"
+          style="font-family:monospace; font-size:12px;" autocomplete="off">
+        <p style="font-size:11px; color:var(--text-secondary); margin-top:4px;">
+          Browsers blokkeren directe AI-calls (CORS). Upload <strong>ai-proxy.php</strong> naar uw webserver
+          en vul hier de URL in. Het bestand staat naast index-tablet.html.
+        </p>
+      </div>
       <button class="btn btn-primary btn-block" onclick="saveSettings()">Instellingen Opslaan</button>
     </div>
 
@@ -7757,6 +7766,7 @@ function loadSettings() {
   document.getElementById('set-toezichthouder').value = s.toezichthouder || '';
   document.getElementById('set-rp-apikey').value = s.rpApiKey || '';
   document.getElementById('set-anthropic-apikey').value = s.anthropicApiKey || '';
+  document.getElementById('set-ai-proxy').value = s.aiProxyUrl || '';
   // Laad logo preview
   const logo = storage.getItem('vth_logo') || '';
   showLogoPreview(logo || null);
@@ -7767,7 +7777,8 @@ function saveSettings() {
     gemeentenaam: document.getElementById('set-gemeentenaam').value.trim(),
     toezichthouder: document.getElementById('set-toezichthouder').value.trim(),
     rpApiKey: document.getElementById('set-rp-apikey').value.trim(),
-    anthropicApiKey: document.getElementById('set-anthropic-apikey').value.trim()
+    anthropicApiKey: document.getElementById('set-anthropic-apikey').value.trim(),
+    aiProxyUrl: document.getElementById('set-ai-proxy').value.trim()
   };
   saveSettingsData(data);
   showToast('Instellingen opgeslagen');
@@ -8225,8 +8236,17 @@ async function aiAnalyseerPdf() {
 
   // Diagnose: file:// protocol werkt niet voor externe API-calls
   if (window.location.protocol === 'file:') {
-    showToast('⚠️ AI werkt niet via file://. Open de app via een webserver (http://).');
-    document.getElementById('pdfStatus').textContent = '⚠️ Kan API niet bereiken via file://. Gebruik een webserver.';
+    showToast('⚠️ AI werkt niet via file://. Open de app via een webserver.');
+    document.getElementById('pdfStatus').textContent = '⚠️ Niet beschikbaar via file://. Gebruik een webserver.';
+    return;
+  }
+
+  const proxyUrl = getSettings().aiProxyUrl;
+  if (!proxyUrl) {
+    showToast('⚠️ Stel een AI Proxy URL in bij Instellingen (CORS vereist een proxy)');
+    document.getElementById('pdfStatus').textContent =
+      '⚠️ AI-analyse vereist een proxy-URL. Ga naar Instellingen → AI Proxy URL. ' +
+      'Upload ai-proxy.php naar uw webserver en vul de URL in.';
     return;
   }
 
@@ -8266,13 +8286,12 @@ Regels voor voorschriften:
 - Als er geen voorschriften aanwezig zijn: geef een lege array []`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-allow-browser': 'true'
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
