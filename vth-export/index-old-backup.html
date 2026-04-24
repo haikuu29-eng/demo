@@ -15,10 +15,9 @@
 <meta name="author" content="Christian Krielen">
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1024, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>OmgevingsCheck</title>
@@ -62,299 +61,77 @@ a { color: inherit; text-decoration: none; }
   --transition: 0.2s ease;
 }
 
-/* ===== TABLET SHELL ===== */
-html, body { height: 100%; overflow: hidden; }
-
-.tablet-shell {
-  display: grid;
-  grid-template-rows: 56px 1fr;
-  grid-template-columns: 68px 1fr;
-  height: 100vh;   /* fallback */
-  height: 100dvh;  /* dynamic viewport height — accounts for Edge/Chrome browser chrome on Android */
-  background: #fff;
-}
-
-/* ===== TOPBAR ===== */
+/* ===== APP HEADER ===== */
 .app-header {
-  grid-column: 1 / -1;
-  background: #1B4B6B;
+  background: var(--primary);
   color: #fff;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
-  padding: 0 18px;
-  gap: 14px;
+  gap: 12px;
+  position: sticky;
+  top: 0;
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  min-height: 60px;
 }
-.app-header .topbar-logo {
-  width: 32px; height: 32px;
-  background: #fff; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
+.app-header h1 { flex: 1; text-align: center; }
+.app-header .back-btn {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 22px;
+  flex-shrink: 0;
+  transition: background var(--transition);
 }
+.app-header .back-btn:hover { background: rgba(255,255,255,0.25); }
+.app-header .back-btn.hidden { display: none; }
 .app-header h1 {
-  font-size: 17px; font-weight: 700; letter-spacing: .3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 20px;
+  font-weight: 600;
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.app-header .topbar-sub {
-  font-size: 11px; color: rgba(255,255,255,.65);
+.app-header .header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
-.app-header .topbar-search {
-  background: rgba(255,255,255,.15);
-  border: 1px solid rgba(255,255,255,.25);
-  border-radius: 20px;
-  padding: 6px 14px 6px 32px;
-  color: #fff; font-size: 13px; width: 220px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,.6)' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: 10px center;
-}
-.app-header .topbar-search::placeholder { color: rgba(255,255,255,.5); }
-.app-header .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .app-header .icon-btn {
-  background: rgba(255,255,255,0.15); border: none; color: #fff;
-  width: 36px; height: 36px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 17px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
   transition: background var(--transition);
 }
 .app-header .icon-btn:hover { background: rgba(255,255,255,0.25); }
-.app-header .topbar-avatar {
-  width: 34px; height: 34px; background: #2E7D9A; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
-}
-/* Hide old mobile-only back-btn */
-.app-header .back-btn { display: none !important; }
-
-/* ===== SIDENAV ===== */
-.sidenav {
-  grid-row: 2; grid-column: 1;
-  background: #1B3A52;
-  display: flex; flex-direction: column;
-  align-items: center; padding: 12px 0; gap: 4px;
-  z-index: 90;
-}
-.nav-item {
-  width: 52px; height: 52px; border-radius: 10px;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 3px;
-  cursor: pointer; color: rgba(255,255,255,.5);
-  font-size: 9px; font-weight: 600;
-  transition: all .15s; position: relative;
-  border: none; background: none;
-}
-.nav-item:hover { background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); }
-.nav-item.active { background: rgba(255,255,255,.15); color: #fff; }
-.nav-item.active::before {
-  content: ''; position: absolute;
-  left: 0; top: 8px; bottom: 8px;
-  width: 3px; background: #4FC3F7;
-  border-radius: 0 3px 3px 0;
-}
-.nav-icon { font-size: 20px; line-height: 1; }
-.nav-divider { width: 32px; height: 1px; background: rgba(255,255,255,.1); margin: 6px 0; }
-.nav-bottom { margin-top: auto; }
-
-/* ===== MAIN AREA ===== */
-.main-area {
-  grid-row: 2; grid-column: 2;
-  overflow: hidden;
-  background: #F4F6F9;
-  position: relative; /* anchor voor absolute screens */
-}
-
-/* ===== SCREENS — absoluut gepositioneerd binnen .main-area =====
-   Voorkomt hoogte-berekeningsproblemen in Safari (grid→flex chain).
-   Elke screen vult de volledige .main-area via top/right/bottom/left. */
-.screen {
-  display: none;
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  flex-direction: column; overflow: hidden;
-}
-.screen.active { display: flex; }
-
-/* ===== SPLIT VIEW (projectDetail) ===== */
-.split-shell {
-  display: flex; height: 100%; overflow: hidden;
-}
-.split-list-col {
-  width: 340px; flex-shrink: 0;
-  display: flex; flex-direction: column;
-  border-right: 1px solid #E0E5EC;
-  background: #fff;
-  overflow: hidden;
-}
-.split-list-col .split-list-header {
-  padding: 12px 14px; border-bottom: 1px solid #E0E5EC;
-  font-size: 14px; font-weight: 700; color: #1B3A52;
-  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-}
-.split-list-col .split-list-scroll {
-  overflow-y: auto; flex: 1; padding: 8px;
-}
-.split-detail-col {
-  flex: 1; display: flex; flex-direction: column; overflow: hidden;
-  background: #F4F6F9;
-}
-
-/* Compact project card in split list */
-.split-project-card {
-  padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
-  border: 1px solid #E0E5EC; cursor: pointer;
-  background: #fff; transition: all .15s;
-}
-.split-project-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-.split-project-card.selected {
-  border: 2px solid #1B3A52; background: #F0F4F8;
-}
-.split-project-card .sp-name { font-size: 13px; font-weight: 700; color: #1B3A52; }
-.split-project-card .sp-meta { font-size: 11px; color: #888; margin-top: 2px; }
-
-/* ===== MAIN CONTENT (inside screens) ===== */
-.main-content {
-  padding: 20px 24px;
-  overflow-y: auto;
-  flex: 1;
-  max-width: 900px;
-}
-
-/* Screen-level scrollable containers */
-#screen-projectList { overflow: hidden; }
-.screen-scroll { overflow-y: auto; flex: 1; padding: 16px 20px; }
-
-/* ===== VANDAAG PANEL ===== */
-.vandaag-panel {
-  position: absolute; right: 0; top: 0; bottom: 0;
-  width: 260px; background: #fff;
-  border-left: 1px solid #E0E5EC;
-  overflow-y: auto; display: flex; flex-direction: column;
-  transform: translateX(0);
-  transition: transform .32s cubic-bezier(.4,0,.2,1);
-  box-shadow: -4px 0 16px rgba(0,0,0,.06);
-  z-index: 10;
-}
-.vandaag-panel.hidden { transform: translateX(260px); }
-
-/* ===== SUBHEADER (project list) ===== */
-.subheader {
-  background: #fff; padding: 12px 16px 0;
-  border-bottom: 1px solid #E0E5EC; flex-shrink: 0;
-}
-.subheader-row {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-}
-.subheader-title { font-size: 17px; font-weight: 700; color: #1B3A52; flex: 1; }
-.filter-row {
-  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px;
-  scrollbar-width: none;
-}
-.filter-row::-webkit-scrollbar { display: none; }
-.filter-chip-t {
-  padding: 5px 13px; border-radius: 99px;
-  border: 1px solid #D0D8E4; font-size: 12px; font-weight: 500;
-  color: #555; cursor: pointer; white-space: nowrap; background: #fff;
-  user-select: none; transition: all .15s;
-}
-.filter-chip-t:hover { border-color: #1B3A52; color: #1B3A52; }
-.filter-chip-t.active { background: #1B3A52; color: #fff; border-color: #1B3A52; }
-
-/* ===== CHIP BADGES ===== */
-.fc-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 16px; height: 16px; border-radius: 10px;
-  background: #E8EDF3; color: #555;
-  font-size: 9px; font-weight: 800; padding: 0 4px; line-height: 1;
-  margin-left: 4px; vertical-align: middle; transition: all .15s;
-}
-.filter-chip-t.active .fc-badge { background: rgba(255,255,255,.28) !important; color: #fff !important; }
-
-/* ===== PROJECT CARDS ===== */
-.project-list { display: flex; flex-direction: column; gap: 10px; }
-.project-card {
-  background: var(--surface); border-radius: 10px;
-  padding: 14px 16px; box-shadow: var(--shadow);
-  cursor: pointer; transition: all var(--transition);
-  border-left: 4px solid var(--primary);
-}
-.project-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
-.project-card .card-top {
-  display: flex; justify-content: space-between;
-  align-items: flex-start; margin-bottom: 5px;
-}
-.project-card .project-name { font-size: 15px; font-weight: 600; color: var(--text); }
-.project-card .project-meta { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
-.project-card .project-meta span { margin-right: 14px; }
-
-/* ===== FAB (now in-panel button, not fixed) ===== */
-.fab { display: none !important; }
-.fab-import { display: none !important; }
-.btn-nieuw {
-  background: #1B6B6B; color: #fff;
-  border: none; border-radius: 8px;
-  padding: 7px 14px; font-size: 13px; font-weight: 600;
-  cursor: pointer; display: flex; align-items: center; gap: 6px;
-  white-space: nowrap;
-}
-.btn-nieuw:hover { background: #145252; }
-
-/* ===== KAART ===== */
-#kaartContainer { height: 100%; width: 100%; border-radius: 0; }
-
-/* ===== TOAST ===== */
-.toast {
-  position: fixed; bottom: 40px; left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  z-index: 9999;
-}
-
-/* ===== TABS (detail) ===== */
-.tabs {
-  display: flex; background: #fff;
-  border-radius: 0; overflow: hidden;
-  margin-bottom: 0; box-shadow: none;
-  border-bottom: 1px solid #E0E5EC;
-  flex-shrink: 0;
-}
-.tab-btn {
-  flex: 1; padding: 12px 10px;
-  background: transparent; border: none;
-  font-size: 13px; font-weight: 600;
-  color: var(--text-secondary); cursor: pointer;
-  border-bottom: 3px solid transparent;
-  transition: all var(--transition); min-height: 44px;
-}
-.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: var(--primary-light); }
-
-/* ===== SPLIT DETAIL HEADER ===== */
-.detail-header-bar {
-  background: #1B3A52; padding: 16px 20px; color: #fff; flex-shrink: 0;
-}
-.detail-header-bar .dh-title { font-size: 16px; font-weight: 700; }
-.detail-header-bar .dh-addr { font-size: 12px; color: rgba(255,255,255,.65); margin-top: 2px; }
-.detail-header-bar .dh-links { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.dh-link {
-  background: rgba(255,255,255,.15); color: #fff;
-  padding: 5px 12px; border-radius: 6px; font-size: 11px;
-  font-weight: 600; text-decoration: none; border: none; cursor: pointer;
-}
-.dh-link:hover { background: rgba(255,255,255,.25); }
-
-/* ===== SCROLLBAR ===== */
-.split-list-scroll::-webkit-scrollbar,
-.detail-tab-scroll::-webkit-scrollbar,
-.screen-scroll::-webkit-scrollbar { width: 5px; }
-.split-list-scroll::-webkit-scrollbar-thumb,
-.detail-tab-scroll::-webkit-scrollbar-thumb,
-.screen-scroll::-webkit-scrollbar-thumb { background: #C8D0DC; border-radius: 3px; }
 
 /* ===== MAIN CONTENT ===== */
 .main-content {
-  max-width: none;
-  padding: 20px 24px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
 }
 
-/* ===== SCREENS — overridden by tablet CSS above ===== */
+/* ===== SCREENS ===== */
+.screen { display: none; }
+.screen.active { display: block; }
 
 /* ===== SEARCH BAR ===== */
 .search-bar {
@@ -902,86 +679,6 @@ html, body { height: 100%; overflow: hidden; }
 }
 .app-footer a { color: var(--primary); text-decoration: underline; }
 
-/* ===== PROJECT FORM — LANDSCAPE TABLET (links velden · rechts donkere sidebar) ===== */
-#screen-projectForm { overflow: hidden; }
-
-.pf-topbar {
-  background: #1B3A52; padding: 11px 18px;
-  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-}
-.pf-topbar-title { color: #fff; font-size: 14px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pf-back-btn { background: rgba(255,255,255,.15); border: none; color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
-
-.pf-shell { display: flex; flex: 1; overflow: hidden; }
-
-/* LEFT column — formuliervelden */
-.pf-left {
-  flex: 1; overflow-y: auto; padding: 20px 22px; min-height: 0;
-  background: #F8FAFB; -webkit-overflow-scrolling: touch; touch-action: pan-y;
-}
-
-/* RIGHT column — donkere sidebar (status + acties) */
-.pf-right {
-  width: 230px; flex-shrink: 0; background: #1B3A52;
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.pf-right-inner {
-  padding: 20px 16px; display: flex; flex-direction: column;
-  flex: 1; gap: 8px; overflow-y: auto; min-height: 0;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Section titles — links licht, rechts wit/transparant */
-.pf-section-title {
-  font-size: 10px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: .7px; color: #1B3A52;
-  margin: 16px 0 10px; padding-bottom: 5px; border-bottom: 2px solid #E0E5EC;
-}
-.pf-section-title:first-child { margin-top: 0; }
-.pf-right .pf-section-title {
-  color: rgba(255,255,255,.5); border-bottom-color: rgba(255,255,255,.12);
-  margin-top: 0;
-}
-.pf-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 14px; }
-
-/* Status knoppen — donkere stijl zoals screenshot */
-.pf-status-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
-.pf-status-btn {
-  padding: 12px 14px; border-radius: 10px;
-  background: rgba(255,255,255,.08); border: 2px solid transparent;
-  color: rgba(255,255,255,.45); font-size: 13px; font-weight: 700;
-  cursor: pointer; text-align: left;
-  display: flex; align-items: center; gap: 10px;
-  transition: all .15s; line-height: 1.2; width: 100%;
-}
-.pf-status-btn:hover { background: rgba(255,255,255,.15); color: rgba(255,255,255,.8); }
-.pf-status-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.2); flex-shrink: 0; transition: background .15s; }
-
-/* Active states — zelfde kleuren als screenshot */
-.pf-status-btn[data-status="Nog niet gestart"].active { background: rgba(158,158,158,.18); border-color: #9E9E9E; color: #bdbdbd; }
-.pf-status-btn[data-status="Nog niet gestart"].active .pf-status-dot { background: #9E9E9E; }
-.pf-status-btn[data-status="In uitvoering"].active { background: rgba(230,81,0,.25); border-color: #E65100; color: #FFB74D; }
-.pf-status-btn[data-status="In uitvoering"].active .pf-status-dot { background: #E65100; }
-.pf-status-btn[data-status="Gereed"].active { background: rgba(46,125,50,.22); border-color: #4CAF50; color: #81C784; }
-.pf-status-btn[data-status="Gereed"].active .pf-status-dot { background: #4CAF50; }
-.pf-status-btn[data-status="In te trekken"].active { background: rgba(123,31,162,.22); border-color: #9C27B0; color: #CE93D8; }
-.pf-status-btn[data-status="In te trekken"].active .pf-status-dot { background: #9C27B0; }
-
-/* Acties onderaan rechterkolom */
-.pf-right-actions { margin-top: auto; padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
-.pf-pdf-btn {
-  background: rgba(255,255,255,.08); border: 1px dashed rgba(255,255,255,.28);
-  color: rgba(255,255,255,.65); padding: 10px 10px; border-radius: 10px;
-  font-size: 12px; font-weight: 600; cursor: pointer; text-align: center;
-}
-.pf-pdf-btn:hover { background: rgba(255,255,255,.15); }
-.pf-save-btn {
-  background: #E65100; border: none; color: #fff;
-  padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 800;
-  cursor: pointer; transition: background .15s;
-}
-.pf-save-btn:hover { background: #BF360C; }
-
 /* ===== PRINT STYLES ===== */
 @media print {
   body { background: #fff; font-size: 11pt; }
@@ -1098,8 +795,8 @@ html, body { height: 100%; overflow: hidden; }
 /* Geselecteerde tekst markering in de PDF viewer */
 #pdfTekstInhoud ::selection { background: #B2DFDB; color: #004D40; }
 
-/* ===== KAART — overridden by tablet CSS ===== */
-#kaartContainer { height: calc(100vh - 56px - 148px); width: 100%; border-radius: 0; overflow: hidden; }
+/* ===== KAART ===== */
+#kaartContainer { height: calc(100vh - 160px); width: 100%; border-radius: var(--radius); overflow: hidden; }
 .view-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
 .view-toggle-btn { flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; color: var(--text-secondary); }
 .view-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -1107,120 +804,58 @@ html, body { height: 100%; overflow: hidden; }
 </style>
 </head>
 <body>
-<div class="tablet-shell">
 
-<!-- ===== TOPBAR ===== -->
+<!-- HEADER -->
 <header class="app-header" id="appHeader">
-  <div class="topbar-logo">🏗️</div>
-  <div style="flex:1; min-width:0;">
-    <div style="font-size:16px; font-weight:700; letter-spacing:.2px;">OmgevingsCheck</div>
-    <div class="topbar-sub" id="topbarSub">Gemeente Waalre · VTH Toezicht</div>
-  </div>
-  <!-- hidden back-btn placeholder for JS compatibility -->
   <button class="back-btn hidden" id="backBtn" onclick="goBack()" aria-label="Terug">&#8592;</button>
-  <h1 id="headerTitle" style="display:none;"></h1>
-  <input class="topbar-search" id="searchBar" placeholder="Zoek project, adres, zaaknummer..." oninput="tabletSearch()">
+  <h1 id="headerTitle">OmgevingsCheck</h1>
   <div class="header-actions">
-    <button class="icon-btn" onclick="exportData()" title="Backup opslaan">&#128190;</button>
-    <button class="icon-btn" onclick="tabletGo('settings')" title="Instellingen">&#9881;</button>
+    <button class="icon-btn" onclick="exportData()" aria-label="Backup maken" title="Backup opslaan als bestand" id="backupBtn">&#128190;</button>
+    <button class="icon-btn" onclick="showScreen('settings')" aria-label="Instellingen" title="Instellingen">&#9881;</button>
   </div>
-  <span id="syncStatusBadge" title="Synchronisatiestatus"
-    style="display:none; width:30px; height:30px; border-radius:50%;
-           align-items:center; justify-content:center; font-size:15px; flex-shrink:0;"></span>
-  <div class="topbar-avatar" id="topbarAvatar">CK</div>
 </header>
-
-<!-- ===== SIDENAV ===== -->
-<nav class="sidenav">
-  <button class="nav-item active" id="nav-zaken" onclick="tabletGo('projectList')">
-    <span class="nav-icon">📋</span><span>Zaken</span>
-  </button>
-  <button class="nav-item" id="nav-kaart" onclick="tabletGo('kaartView')">
-    <span class="nav-icon">🗺️</span><span>Kaart</span>
-  </button>
-  <div class="nav-divider"></div>
-  <button class="nav-item" id="nav-rapporten" onclick="tabletGo('rapporten')">
-    <span class="nav-icon">📄</span><span>Rapporten</span>
-  </button>
-  <button class="nav-item" id="nav-import" onclick="openXlsImport()">
-    <span class="nav-icon">📥</span><span>Importeer</span>
-  </button>
-  <div class="nav-bottom">
-    <button class="nav-item" id="nav-settings" onclick="tabletGo('settings')">
-      <span class="nav-icon">⚙️</span><span>Instellingen</span>
-    </button>
-  </div>
-</nav>
-
-<!-- ===== MAIN AREA ===== -->
-<main class="main-area" id="mainArea">
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- SYNC HERVERBIND BANNER -->
-<div id="syncHerverbindBanner" style="display:none; padding:8px 16px; flex-shrink:0; z-index:20;"></div>
-
 <!-- ===== SCREEN: PROJECT LIST ===== -->
 <div class="screen active" id="screen-projectList">
+  <div class="main-content">
+    <input type="text" class="search-bar" id="searchBar" placeholder="Zoek op naam, adres of zaaknummer..." oninput="renderProjectList()">
+    
+    <div class="filter-chips" id="filterChips">
+      <div class="chip active" data-filter="all" onclick="setFilter(this, 'all')">Alle</div>
+      <div class="chip" data-filter="type-Bouwvergunning" onclick="setFilter(this, 'type-Bouwvergunning')">Bouwvergunning</div>
+      <div class="chip" data-filter="type-Melding handhaving" onclick="setFilter(this, 'type-Melding handhaving')">Melding handhaving</div>
+      <div class="chip" data-filter="type-Handhavingsverzoek" onclick="setFilter(this, 'type-Handhavingsverzoek')">Handhavingsverzoek</div>
+      <div class="chip" data-filter="status-Nog niet gestart" onclick="setFilter(this, 'status-Nog niet gestart')">Nog niet gestart</div>
+      <div class="chip" data-filter="status-Open" onclick="setFilter(this, 'status-Open')">Open</div>
+      <div class="chip" data-filter="status-In uitvoering" onclick="setFilter(this, 'status-In uitvoering')">In uitvoering</div>
+      <div class="chip" data-filter="status-Opgeleverd" onclick="setFilter(this, 'status-Opgeleverd')">Opgeleverd</div>
+      <div class="chip" data-filter="status-Afgehandeld" onclick="setFilter(this, 'status-Afgehandeld')">Afgehandeld</div>
+    </div>
 
-  <!-- Subheader -->
-  <div class="subheader">
-    <div class="subheader-row">
-      <div class="subheader-title">Toezichtzaken</div>
-      <select id="sortSelect" onchange="renderProjectList()" style="font-size:12px; border:1px solid #D0D8E4; border-radius:6px; padding:5px 8px; color:#444; background:#fff;">
-        <option value="laatste-controle">Laatste controle</option>
-        <option value="aangemaakt">Datum aangemaakt</option>
-        <option value="naam">Naam A–Z</option>
-        <option value="status">Status</option>
-      </select>
-      <button class="btn-nieuw" onclick="tabletToggleVandaag()" id="vandaagBtn" title="Vandaag-paneel">
-        📅 <span id="vandaagBtnLabel">Vandaag</span> <span id="vandaagBtnArrow" style="font-size:11px;">›</span>
-      </button>
-      <button class="btn-nieuw" onclick="openProjectForm()">＋ Nieuw project</button>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:8px;">
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" id="btnLijst" onclick="setView('lijst')">&#128203; Lijst</button>
+        <button class="view-toggle-btn" id="btnKaart" onclick="setView('kaart')">&#128506; Kaart</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;" id="sortWrapper">
+        <label style="font-size:13px; color:var(--text-secondary);">Sorteer:</label>
+        <select id="sortSelect" onchange="renderProjectList()" style="font-size:13px; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--text-primary);">
+          <option value="laatste-controle">Laatste controle</option>
+          <option value="aangemaakt">Datum aangemaakt</option>
+          <option value="naam">Naam (A-Z)</option>
+          <option value="status">Status</option>
+        </select>
+      </div>
     </div>
-    <!-- Filter chips -->
-    <div class="filter-row" id="filterChips">
-      <div class="filter-chip-t active" data-filter="all" onclick="setFilter(this,'all')">Alle<span class="fc-badge" style="display:none;"></span></div>
-      <div class="filter-chip-t" data-filter="type-Toezicht omgevingsvergunning" onclick="setFilter(this,'type-Toezicht omgevingsvergunning')">Toezicht omgevingsvergunning<span class="fc-badge" style="display:none;"></span></div>
-      <div class="filter-chip-t" data-filter="type-Melding handhaving" onclick="setFilter(this,'type-Melding handhaving')">Melding handhaving<span class="fc-badge" style="display:none;"></span></div>
-      <div class="filter-chip-t" data-filter="type-Handhavingsverzoek" onclick="setFilter(this,'type-Handhavingsverzoek')">Handhavingsverzoek<span class="fc-badge" style="display:none;"></span></div>
-      <div class="filter-chip-t" data-filter="status-Nog niet gestart" onclick="setFilter(this,'status-Nog niet gestart')">Nog niet gestart<span class="fc-badge" style="background:#9E9E9E;color:#fff;display:none;"></span></div>
-      <div class="filter-chip-t" data-filter="status-In uitvoering" onclick="setFilter(this,'status-In uitvoering')">In uitvoering<span class="fc-badge" style="background:#E65100;color:#fff;display:none;"></span></div>
-      <div class="filter-chip-t" data-filter="status-Gereed" onclick="setFilter(this,'status-Gereed')">Gereed<span class="fc-badge" style="background:#2E7D32;color:#fff;display:none;"></span></div>
-      <div class="filter-chip-t" data-filter="status-In te trekken" onclick="setFilter(this,'status-In te trekken')">In te trekken<span class="fc-badge" style="background:#7B1FA2;color:#fff;display:none;"></span></div>
-    </div>
+
+    <div class="project-list" id="projectList"></div>
+    <div id="kaartContainer" style="display:none;"></div>
   </div>
-
-  <!-- List + Vandaag panel wrapper -->
-  <div style="flex:1; overflow:hidden; position:relative; display:flex;">
-
-    <!-- Project list column -->
-    <div id="listCol" style="flex:1; overflow-y:auto; padding:12px 16px; margin-right:260px; transition:margin-right .32s cubic-bezier(.4,0,.2,1);">
-      <!-- view toggle (hidden, kaart via sidenav) -->
-      <div style="display:none;">
-        <button id="btnLijst" class="view-toggle-btn active" onclick="setView('lijst')">Lijst</button>
-        <button id="btnKaart" class="view-toggle-btn" onclick="setView('kaart')">Kaart</button>
-        <div id="sortWrapper"></div>
-      </div>
-      <div class="project-list" id="projectList"></div>
-      <div id="kaartContainer" style="display:none; height:100%;"></div>
-    </div>
-
-    <!-- Vandaag panel -->
-    <div class="vandaag-panel" id="vandaagPanel">
-      <div style="padding:14px 16px 10px; border-bottom:1px solid #F0F4F8; display:flex; align-items:flex-start; justify-content:space-between; flex-shrink:0;">
-        <div>
-          <div style="font-size:10px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.6px;">Vandaag</div>
-          <div id="vandaagDatum" style="font-size:14px; font-weight:700; color:#1B3A52; margin-top:2px;"></div>
-        </div>
-        <button onclick="tabletToggleVandaag()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#aaa;padding:0;">›</button>
-      </div>
-      <div id="vandaagInhoud" style="padding:12px; flex:1; overflow-y:auto;">
-        <!-- Ingevuld door JS -->
-      </div>
-    </div>
-  </div>
+  <button class="fab no-print" onclick="openProjectForm()" aria-label="Nieuw project">+</button>
+  <button class="fab-import no-print" onclick="openXlsImport()" aria-label="Importeer XLS" title="Zaken importeren uit XLS" id="fabImport">&#128196;</button>
 </div>
 
 <!-- ===== MODAL: XLS IMPORT ===== -->
@@ -1315,7 +950,7 @@ html, body { height: 100%; overflow: hidden; }
         <label>Zaaktype (optioneel)</label>
         <select id="sf-zaaktype">
           <option value="">Alle zaaktypen</option>
-          <option>Toezicht omgevingsvergunning</option>
+          <option>Bouwvergunning</option>
           <option>Melding handhaving</option>
           <option>Handhavingsverzoek</option>
         </select>
@@ -1345,24 +980,22 @@ html, body { height: 100%; overflow: hidden; }
 
 <!-- ===== SCREEN: PROJECT FORM ===== -->
 <div class="screen" id="screen-projectForm">
-
-  <!-- Topbar -->
-  <div class="pf-topbar">
-    <button class="pf-back-btn" onclick="goBack()">‹ Terug</button>
-    <span class="pf-topbar-title" id="projectFormTitle">Nieuw Project</span>
-  </div>
-
-  <!-- Twee kolommen -->
-  <div class="pf-shell">
-
-    <!-- LINKS: zaakgegevens, adres, activiteiten -->
-    <div class="pf-left">
-
-      <div class="pf-section-title">Zaakgegevens</div>
+  <div class="main-content">
+    <div class="settings-card">
+      <h3 id="projectFormTitle">Nieuw Project</h3>
+      
+      <div style="margin-bottom:16px; padding:12px; background:var(--primary-light); border-radius:var(--radius-sm); border:1px dashed var(--primary);">
+        <p style="font-size:13px; color:var(--primary); margin-bottom:8px; font-weight:600;">&#128196; Heb je een omgevingsvergunning als PDF?</p>
+        <button type="button" class="btn btn-secondary" onclick="openPdfImport()" style="width:100%;">
+          Importeer gegevens uit PDF
+        </button>
+      </div>
+      
       <div class="form-group">
         <label>Projectnaam *</label>
         <input type="text" id="pf-naam" placeholder="Bijv. Nieuwbouw woning Kerkstraat 1">
       </div>
+      
       <div class="form-row">
         <div class="form-group">
           <label>Zaaknummer</label>
@@ -1372,7 +1005,7 @@ html, body { height: 100%; overflow: hidden; }
           <label>Type zaak *</label>
           <select id="pf-typeZaak">
             <option value="">-- Selecteer --</option>
-            <option value="Toezicht omgevingsvergunning">Toezicht omgevingsvergunning</option>
+            <option value="Bouwvergunning">Bouwvergunning</option>
             <option value="Melding handhaving">Melding handhaving</option>
             <option value="Handhavingsverzoek">Handhavingsverzoek</option>
             <option value="Anders">Anders</option>
@@ -1380,8 +1013,8 @@ html, body { height: 100%; overflow: hidden; }
         </div>
       </div>
 
-      <div class="pf-section-title">Adresgegevens</div>
-      <div class="pf-row3">
+      <div class="form-section-title">Adresgegevens</div>
+      <div class="form-row">
         <div class="form-group">
           <label>Straat + huisnummer</label>
           <input type="text" id="pf-straat" placeholder="Kerkstraat 1">
@@ -1390,35 +1023,33 @@ html, body { height: 100%; overflow: hidden; }
           <label>Postcode</label>
           <input type="text" id="pf-postcode" placeholder="1234 AB">
         </div>
-        <div class="form-group">
-          <label>Plaats</label>
-          <input type="text" id="pf-plaats" placeholder="Voorbeeldstad">
-        </div>
+      </div>
+      <div class="form-group">
+        <label>Plaats</label>
+        <input type="text" id="pf-plaats" placeholder="Voorbeeldstad">
       </div>
 
-      <div class="pf-section-title">Activiteiten &amp; Gevolgklasse</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Activiteiten</label>
-          <div class="multi-select-wrapper" id="activiteitenWrapper">
-            <div class="multi-select-container" id="activiteitenContainer" onclick="toggleMultiSelect('activiteiten')">
-              <span style="color:#9E9E9E; font-size:14px;" id="activiteitenPlaceholder">Selecteer activiteiten...</span>
-            </div>
-            <div class="multi-select-dropdown" id="activiteitenDropdown"></div>
+      <div class="form-section-title">Activiteiten &amp; Gevolgklasse</div>
+      <div class="form-group">
+        <label>Activiteiten</label>
+        <div class="multi-select-wrapper" id="activiteitenWrapper">
+          <div class="multi-select-container" id="activiteitenContainer" onclick="toggleMultiSelect('activiteiten')">
+            <span style="color: #9E9E9E; font-size: 14px;" id="activiteitenPlaceholder">Selecteer activiteiten...</span>
           </div>
-        </div>
-        <div class="form-group">
-          <label>Gevolgklasse</label>
-          <select id="pf-gevolgklasse">
-            <option value="">-- Selecteer --</option>
-            <option value="Gevolgklasse 1">Gevolgklasse 1</option>
-            <option value="Gevolgklasse 2">Gevolgklasse 2</option>
-            <option value="Gevolgklasse 3">Gevolgklasse 3</option>
-          </select>
+          <div class="multi-select-dropdown" id="activiteitenDropdown"></div>
         </div>
       </div>
+      <div class="form-group">
+        <label>Gevolgklasse</label>
+        <select id="pf-gevolgklasse">
+          <option value="">-- Selecteer --</option>
+          <option value="Gevolgklasse 1">Gevolgklasse 1</option>
+          <option value="Gevolgklasse 2">Gevolgklasse 2</option>
+          <option value="Gevolgklasse 3">Gevolgklasse 3</option>
+        </select>
+      </div>
 
-      <div class="pf-section-title">Betrokkenen</div>
+      <div class="form-section-title">Betrokkenen</div>
       <div class="form-row">
         <div class="form-group">
           <label>Initiatiefnemer naam</label>
@@ -1440,219 +1071,166 @@ html, body { height: 100%; overflow: hidden; }
         </div>
       </div>
 
-      <div class="pf-section-title">Opmerkingen</div>
+      <div class="form-section-title">Status &amp; Opmerkingen</div>
       <div class="form-group">
+        <label>Status</label>
+        <select id="pf-status">
+          <option value="Nog niet gestart">Nog niet gestart</option>
+          <option value="Open">Open</option>
+          <option value="In uitvoering">In uitvoering</option>
+          <option value="Opgeleverd">Opgeleverd</option>
+          <option value="Afgehandeld">Afgehandeld</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Opmerkingen</label>
         <textarea id="pf-opmerkingen" placeholder="Algemene opmerkingen over het project..."></textarea>
       </div>
 
-    </div><!-- /pf-left -->
-
-    <!-- RECHTS: donkere sidebar — status + acties -->
-    <div class="pf-right">
-      <div class="pf-right-inner">
-
-        <div class="pf-section-title">Status</div>
-        <div class="pf-status-grid">
-          <button class="pf-status-btn" data-status="Nog niet gestart" onclick="selectPfStatus('Nog niet gestart')">
-            <span class="pf-status-dot"></span>Nog niet gestart
-          </button>
-          <button class="pf-status-btn" data-status="In uitvoering" onclick="selectPfStatus('In uitvoering')">
-            <span class="pf-status-dot"></span>In uitvoering
-          </button>
-          <button class="pf-status-btn" data-status="Gereed" onclick="selectPfStatus('Gereed')">
-            <span class="pf-status-dot"></span>Gereed
-          </button>
-          <button class="pf-status-btn" data-status="In te trekken" onclick="selectPfStatus('In te trekken')">
-            <span class="pf-status-dot"></span>In te trekken
-          </button>
-        </div>
-        <!-- Hidden select — JS leest deze voor opslaan -->
-        <select id="pf-status" style="display:none;">
-          <option value="Nog niet gestart">Nog niet gestart</option>
-          <option value="In uitvoering">In uitvoering</option>
-          <option value="Gereed">Gereed</option>
-          <option value="In te trekken">In te trekken</option>
-        </select>
-
-        <div class="pf-right-actions">
-          <button class="pf-pdf-btn" onclick="openPdfImport()">📄 Importeer uit PDF</button>
-          <button class="pf-save-btn" onclick="saveProject()">✓ Opslaan</button>
-        </div>
-
-      </div><!-- /pf-right-inner -->
-    </div><!-- /pf-right -->
-
-  </div><!-- /pf-shell -->
+      <button class="btn btn-primary btn-block btn-lg" onclick="saveProject()">Opslaan</button>
+    </div>
+  </div>
 </div>
 
-<!-- ===== SCREEN: PROJECT DETAIL (split view) ===== -->
+<!-- ===== SCREEN: PROJECT DETAIL ===== -->
 <div class="screen" id="screen-projectDetail">
-  <div class="split-shell">
-
-    <!-- LEFT: compact project list (hidden — navigation via tab bar within case) -->
-    <div class="split-list-col" style="display:none;">
-      <div class="split-list-header">
-        <button onclick="tabletGo('projectList')" style="background:none;border:none;cursor:pointer;font-size:18px;color:#1B3A52;padding:0;">‹</button>
-        <span>Toezichtzaken</span>
-      </div>
-      <div class="split-list-scroll" id="splitProjectList"></div>
+  <div class="main-content">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('basis', this)">Basisgegevens</button>
+      <button class="tab-btn" onclick="switchTab('controles', this)">Controles</button>
+      <button class="tab-btn" onclick="switchTab('voortgang', this)">Voortgang</button>
     </div>
 
-    <!-- RIGHT: project detail -->
-    <div class="split-detail-col" id="splitDetailCol">
-
-      <!-- Detail header -->
-      <div class="detail-header-bar" id="detailHeaderBar">
-        <div style="margin-bottom:8px;">
-          <button onclick="tabletGo('projectList')" style="background:rgba(255,255,255,.15); border:none; color:#fff; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px;">‹ Terug naar overzicht</button>
-        </div>
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
-          <div style="min-width:0;">
-            <div class="dh-title" id="dh-title">—</div>
-            <div class="dh-addr" id="dh-addr"></div>
-          </div>
-          <span class="status-chip" id="dh-status" style="margin-top:3px; flex-shrink:0;"></span>
-        </div>
-        <div class="dh-links" id="dh-links"></div>
+    <div id="tab-basis">
+      <div class="detail-grid" id="detailGrid"></div>
+      <div id="zaaksysteemKnop"></div>
+      <div id="rodkKnop"></div>
+      <div id="dsoPanel"></div>
+      <div id="projectVoorschriften"></div>
+      <div style="margin-top: 16px; display: flex; gap: 12px;">
+        <button class="btn btn-primary" onclick="openProjectForm(currentProjectId)" style="flex:1;">Bewerken</button>
+        <button class="btn btn-danger" onclick="deleteProject(currentProjectId)" style="flex:1;">Verwijderen</button>
       </div>
+    </div>
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('basis', this)">Basisgegevens</button>
-        <button class="tab-btn" onclick="switchTab('controles', this)">Controles</button>
-        <button class="tab-btn" onclick="switchTab('voortgang', this)">Voortgang</button>
-      </div>
+    <div id="tab-controles" style="display:none;">
+      <button class="btn btn-primary btn-block" onclick="openControleForm()" style="margin-bottom:16px;">+ Nieuwe Controle</button>
+      <div id="controleList"></div>
+    </div>
 
-      <!-- Tab content (scrollable) -->
-      <div class="detail-tab-scroll" style="overflow-y:auto; flex:1; min-height:0; padding:16px 20px; -webkit-overflow-scrolling:touch; touch-action:pan-y;">
-        <div id="tab-basis">
-          <div class="detail-grid" id="detailGrid"></div>
-          <div id="projectVoorschriften"></div>
-          <div style="margin-top:16px; display:flex; gap:12px;">
-            <button class="btn btn-primary" onclick="openProjectForm(currentProjectId)" style="flex:1;">Bewerken</button>
-            <button class="btn btn-danger" onclick="deleteProject(currentProjectId)" style="flex:1;">Verwijderen</button>
-          </div>
-        </div>
-        <div id="tab-controles" style="display:none;">
-          <!-- Sub-view: lijst -->
-          <div id="cv-list">
-            <button class="btn btn-primary btn-block" onclick="openControleForm()" style="margin-bottom:16px;">+ Nieuwe Controle</button>
-            <div id="controleList"></div>
-          </div>
-
-          <!-- Sub-view: controle formulier -->
-          <div id="cv-form" style="display:none;">
-            <div style="display:flex; align-items:center; gap:10px; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid #E0E5EC;">
-              <button class="btn btn-secondary" onclick="showControleSubView('list')" style="padding:7px 14px; font-size:13px;">‹ Controles</button>
-              <h3 id="controleFormTitle" style="font-size:16px; font-weight:700; color:var(--primary); margin:0;">Nieuwe Controle</h3>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Datum *</label>
-                <input type="date" id="cf-datum">
-              </div>
-              <div class="form-group">
-                <label>Tijd</label>
-                <input type="time" id="cf-tijd">
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Soort controle *</label>
-              <select id="cf-soort" onchange="pasControleFormAan(this.value)">
-                <option value="">-- Selecteer --</option>
-                <option>Start uitvoering</option>
-                <option>Aanloopcontrole</option>
-                <option>Tussentijdse controle</option>
-                <option>Eindcontrole</option>
-                <option>Controle n.a.v. melding</option>
-                <option>Hercontrole</option>
-                <option>Handhavingscontrole</option>
-              </select>
-            </div>
-            <div id="cf-startBlok" style="display:none; background:#FFF8F2; border:1px solid #FFD0A0; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
-              <div style="font-size:13px; font-weight:600; color:#E65100; margin-bottom:4px;">🏗️ Start uitvoering registreren</div>
-              <div style="font-size:12px; color:var(--text-secondary);">Registreer datum en toezichthouder. Er is geen controleresultaat vereist.</div>
-            </div>
-            <div class="form-group">
-              <label>Toezichthouder(s)</label>
-              <input type="text" id="cf-toezichthouder" placeholder="Naam toezichthouder(s)">
-            </div>
-            <div class="form-group">
-              <label>Aanwezigheid betrokkenen</label>
-              <input type="text" id="cf-aanwezigen" placeholder="Wie waren aanwezig?">
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Meldingsnummer (optioneel)</label>
-                <input type="text" id="cf-meldingsnummer" placeholder="Meldingsnummer">
-              </div>
-              <div class="form-group">
-                <label>Klachtomschrijving (optioneel)</label>
-                <input type="text" id="cf-klacht" placeholder="Korte omschrijving klacht">
-              </div>
-            </div>
-            <div class="form-section-title" id="cf-onderwerpTitel">Onderwerpen</div>
-            <div id="sjabloonKiesRij" style="margin-bottom:10px;">
-              <button type="button" class="btn btn-secondary btn-block" onclick="openSjabloonKiezer()" style="border-style:dashed; font-size:13px;">
-                📋 Sjabloon toepassen
-              </button>
-            </div>
-            <div id="onderwerpCards"></div>
-            <button class="btn btn-secondary btn-block" onclick="openOnderwerpModal()" style="margin-bottom:20px;">+ Onderwerp toevoegen</button>
-            <div class="form-section-title" id="cf-resultaatTitel">Algemeen Controleresultaat</div>
-            <div class="result-buttons" id="algemeenResultaat">
-              <button class="result-btn akkoord" onclick="setAlgemeenResultaat('akkoord', this)">AKKOORD</button>
-              <button class="result-btn akkoord-mits" onclick="setAlgemeenResultaat('akkoord-mits', this)">AKKOORD MITS AANPASSINGEN</button>
-              <button class="result-btn niet-akkoord" onclick="setAlgemeenResultaat('niet-akkoord', this)">NIET AKKOORD</button>
-            </div>
-            <div class="form-group" style="margin-top:16px;">
-              <label>Samenvatting bevindingen</label>
-              <textarea id="cf-samenvatting" placeholder="Samenvatting van de bevindingen..."></textarea>
-            </div>
-            <div id="cf-adviesBlok">
-              <div class="form-group">
-                <label>Advies richting aannemer</label>
-                <textarea id="cf-adviesAannemer" placeholder="Advies en aanbevelingen richting aannemer..."></textarea>
-              </div>
-              <div class="form-group">
-                <label>Advies richting handhaving</label>
-                <textarea id="cf-adviesHandhaving" placeholder="Advies richting handhaving..."></textarea>
-              </div>
-            </div>
-            <button class="btn btn-primary btn-block btn-lg" onclick="saveControle()">Controle Opslaan</button>
-          </div>
-
-          <!-- Sub-view: controle detail -->
-          <div id="cv-detail" style="display:none;">
-            <div style="display:flex; align-items:center; gap:10px; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid #E0E5EC;">
-              <button class="btn btn-secondary" onclick="showControleSubView('list')" style="padding:7px 14px; font-size:13px;">‹ Controles</button>
-            </div>
-            <div id="controleDetailContent"></div>
-            <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="generateReport()" style="flex:1; min-width:200px;">&#128196; Genereer Rapport</button>
-              <button class="btn btn-secondary" onclick="mailRapport()" style="flex:1; min-width:200px;">&#128231; Mailen</button>
-              <button class="btn btn-secondary" onclick="openControleForm(currentControleId)" style="flex:1; min-width:150px;">Bewerken</button>
-              <button class="btn btn-danger" onclick="deleteControle(currentControleId)" style="flex:1; min-width:150px;">Verwijderen</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="tab-voortgang" style="display:none;"></div>
-      </div>
-
-    </div><!-- /split-detail-col -->
-  </div><!-- /split-shell -->
+    <div id="tab-voortgang" style="display:none;"></div>
+  </div>
 </div>
 
-<!-- ===== SCREEN: CONTROLE FORM (leeg — form is verplaatst naar tab-controles > cv-form) ===== -->
-<div class="screen" id="screen-controleForm" style="display:none;"></div>
+<!-- ===== SCREEN: CONTROLE FORM ===== -->
+<div class="screen" id="screen-controleForm">
+  <div class="main-content">
+    <div class="settings-card">
+      <h3 id="controleFormTitle">Nieuwe Controle</h3>
 
-<!-- ===== SCREEN: CONTROLE DETAIL (leeg — detail is verplaatst naar tab-controles > cv-detail) ===== -->
-<div class="screen" id="screen-controleDetail" style="display:none;"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Datum *</label>
+          <input type="date" id="cf-datum">
+        </div>
+        <div class="form-group">
+          <label>Tijd</label>
+          <input type="time" id="cf-tijd">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Soort controle *</label>
+        <select id="cf-soort" onchange="pasControleFormAan(this.value)">
+          <option value="">-- Selecteer --</option>
+          <option>Start uitvoering</option>
+          <option>Aanloopcontrole</option>
+          <option>Tussentijdse controle</option>
+          <option>Eindcontrole</option>
+          <option>Controle n.a.v. melding</option>
+          <option>Hercontrole</option>
+          <option>Handhavingscontrole</option>
+        </select>
+      </div>
+
+      <!-- Alleen zichtbaar bij Start uitvoering -->
+      <div id="cf-startBlok" style="display:none; background:#FFF8F2; border:1px solid #FFD0A0; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+        <div style="font-size:13px; font-weight:600; color:#E65100; margin-bottom:4px;">🏗️ Start uitvoering registreren</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Registreer datum en toezichthouder. Er is geen controleresultaat vereist.</div>
+      </div>
+
+      <div class="form-group">
+        <label>Toezichthouder(s)</label>
+        <input type="text" id="cf-toezichthouder" placeholder="Naam toezichthouder(s)">
+      </div>
+      <div class="form-group">
+        <label>Aanwezigheid betrokkenen</label>
+        <input type="text" id="cf-aanwezigen" placeholder="Wie waren aanwezig?">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Meldingsnummer (optioneel)</label>
+          <input type="text" id="cf-meldingsnummer" placeholder="Meldingsnummer">
+        </div>
+        <div class="form-group">
+          <label>Klachtomschrijving (optioneel)</label>
+          <input type="text" id="cf-klacht" placeholder="Korte omschrijving klacht">
+        </div>
+      </div>
+
+      <div class="form-section-title" id="cf-onderwerpTitel">Onderwerpen</div>
+      <div id="sjabloonKiesRij" style="margin-bottom:10px;">
+        <button type="button" class="btn btn-secondary btn-block" onclick="openSjabloonKiezer()"
+          style="border-style:dashed; font-size:13px;">
+          📋 Sjabloon toepassen
+        </button>
+      </div>
+      <div id="onderwerpCards"></div>
+      <button class="btn btn-secondary btn-block" onclick="openOnderwerpModal()" style="margin-bottom: 20px;">+ Onderwerp toevoegen</button>
+
+      <div class="form-section-title" id="cf-resultaatTitel">Algemeen Controleresultaat</div>
+      <div class="result-buttons" id="algemeenResultaat">
+        <button class="result-btn akkoord" onclick="setAlgemeenResultaat('akkoord', this)">AKKOORD</button>
+        <button class="result-btn akkoord-mits" onclick="setAlgemeenResultaat('akkoord-mits', this)">AKKOORD MITS AANPASSINGEN</button>
+        <button class="result-btn niet-akkoord" onclick="setAlgemeenResultaat('niet-akkoord', this)">NIET AKKOORD</button>
+      </div>
+
+      <div class="form-group" style="margin-top: 16px;">
+        <label>Samenvatting bevindingen</label>
+        <textarea id="cf-samenvatting" placeholder="Samenvatting van de bevindingen..."></textarea>
+      </div>
+      <div id="cf-adviesBlok">
+        <div class="form-group">
+          <label>Advies richting aannemer</label>
+          <textarea id="cf-adviesAannemer" placeholder="Advies en aanbevelingen richting aannemer..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Advies richting handhaving</label>
+          <textarea id="cf-adviesHandhaving" placeholder="Advies richting handhaving..."></textarea>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block btn-lg" onclick="saveControle()">Controle Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: CONTROLE DETAIL ===== -->
+<div class="screen" id="screen-controleDetail">
+  <div class="main-content">
+    <div id="controleDetailContent"></div>
+    <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+      <button class="btn btn-primary" onclick="generateReport()" style="flex:1; min-width: 200px;">&#128196; Genereer Rapport</button>
+      <button class="btn btn-secondary" onclick="mailRapport()" style="flex:1; min-width: 200px;">&#128231; Mailen</button>
+      <button class="btn btn-secondary" onclick="openControleForm(currentControleId)" style="flex:1; min-width: 150px;">Bewerken</button>
+      <button class="btn btn-danger" onclick="deleteControle(currentControleId)" style="flex:1; min-width: 150px;">Verwijderen</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== SCREEN: SETTINGS ===== -->
-<div class="screen" id="screen-settings" style="overflow-y:auto;">
-  <div class="main-content" style="max-width:720px; margin:0 auto;">
+<div class="screen" id="screen-settings">
+  <div class="main-content">
     <div class="settings-card">
       <h3>Gemeentelijke Instellingen</h3>
       <div class="form-group">
@@ -1668,27 +1246,6 @@ html, body { height: 100%; overflow: hidden; }
         <input type="text" id="set-rp-apikey" placeholder="Plak hier uw Ruimtelijke Plannen API-key"
           style="font-family:monospace; font-size:12px;" autocomplete="off">
       </div>
-      <div class="form-group">
-        <label>Anthropic API-key <span style="font-size:12px; color:var(--text-secondary);">(AI-analyse bij PDF-import)</span></label>
-        <input type="password" id="set-anthropic-apikey" placeholder="sk-ant-api03-..."
-          style="font-family:monospace; font-size:12px;" autocomplete="off">
-        <p style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Optioneel. Ingesteld = knop "✨ AI Analyseren" verschijnt bij PDF-import.</p>
-      </div>
-      <div class="form-group">
-        <label>AI Proxy URL <span style="font-size:12px; color:var(--text-secondary);">(vereist voor AI-analyse)</span></label>
-        <input type="url" id="set-ai-proxy" placeholder="https://vth-export.netlify.app/.netlify/functions/ai-proxy"
-          style="font-family:monospace; font-size:12px;" autocomplete="off">
-        <p style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Vul hier de proxy-URL in van je Netlify-site.</p>
-      </div>
-      <div class="form-group">
-        <label>AI Proxy URL <span style="font-size:12px; color:var(--text-secondary);">(vereist voor AI in browser)</span></label>
-        <input type="url" id="set-ai-proxy" placeholder="https://jouwserver.nl/ai-proxy.php"
-          style="font-family:monospace; font-size:12px;" autocomplete="off">
-        <p style="font-size:11px; color:var(--text-secondary); margin-top:4px;">
-          Browsers blokkeren directe AI-calls (CORS). Upload <strong>ai-proxy.php</strong> naar uw webserver
-          en vul hier de URL in. Het bestand staat naast index-tablet.html.
-        </p>
-      </div>
       <button class="btn btn-primary btn-block" onclick="saveSettings()">Instellingen Opslaan</button>
     </div>
 
@@ -1698,7 +1255,10 @@ html, body { height: 100%; overflow: hidden; }
         <img id="logoPreview" src="" style="max-width:120px; display:block; border-radius:6px; border:1px solid var(--border); margin-bottom:8px;">
         <button class="btn btn-danger" onclick="removeLogo()" style="font-size:14px; padding:8px 16px;">Logo verwijderen</button>
       </div>
-      <button class="btn btn-secondary btn-block" onclick="openLogoFilePicker()">&#128444; Logo uploaden</button>
+      <label class="btn btn-secondary btn-block" style="cursor:pointer;">
+        &#128444; Logo uploaden
+        <input type="file" accept="image/*" id="logoInput" style="display:none;" onchange="handleLogoUpload(event)">
+      </label>
     </div>
 
     <div class="settings-card">
@@ -1723,28 +1283,6 @@ html, body { height: 100%; overflow: hidden; }
     </div>
 
     <div class="settings-card">
-      <h3>&#128194; OneDrive Synchronisatie</h3>
-      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
-        Koppel één JSON-bestand op OneDrive. Tablet en laptop lezen en schrijven altijd naar datzelfde bestand — OneDrive regelt de synchronisatie automatisch.<br>
-        <span style="font-size:12px; color:#888;">Vereist Microsoft Edge of Google Chrome.</span>
-      </p>
-      <div id="syncInstellingen">
-        <div style="color:var(--text-secondary); font-size:13px; padding:8px 0;">Laden...</div>
-      </div>
-    </div>
-
-    <div class="settings-card">
-      <h3>&#128193; Rapportenmap (OneDrive)</h3>
-      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
-        Kies een map op OneDrive. Bij elke "Genereer Rapport" worden automatisch een HTML- én PDF-versie opgeslagen in een submap per zaak:<br>
-        <span style="font-size:12px; font-family:monospace; color:#1B3A52;">Rapportenmap \ Z-2026-001 — Kerkstraat 1 \ Eindcontrole 2026-04-10.pdf</span>
-      </p>
-      <div id="rapportenMapInstellingen">
-        <div style="color:var(--text-secondary); font-size:13px; padding:8px 0;">Laden...</div>
-      </div>
-    </div>
-
-    <div class="settings-card">
       <h3>Over</h3>
       <p style="color: var(--text-secondary); font-size: 14px;">OmgevingsCheck App v1.0<br>Offline webapp voor gemeentelijk toezicht op bouwactiviteiten.<br>Alle data wordt lokaal opgeslagen in uw browser.</p>
     </div>
@@ -1752,8 +1290,8 @@ html, body { height: 100%; overflow: hidden; }
 </div>
 
 <!-- ===== SCREEN: PRINT REPORT ===== -->
-<div class="screen" id="screen-printReport" style="overflow-y:auto;">
-  <div class="main-content" style="max-width:860px; margin:0 auto;">
+<div class="screen" id="screen-printReport">
+  <div class="main-content">
     <div id="reportPreview"></div>
     <div style="margin-top:16px; display: flex; gap: 12px;" class="no-print">
       <button class="btn btn-primary btn-block btn-lg" onclick="printMetBestandsnaam()">&#128424; Afdrukken / Opslaan als PDF</button>
@@ -1764,130 +1302,6 @@ html, body { height: 100%; overflow: hidden; }
 
 <!-- PRINT AREA (hidden, shown only during print) -->
 <div id="printArea"></div>
-
-<!-- ===== SCREEN: PDF IMPORT ===== -->
-<div class="screen" id="screen-pdfImport">
-  <div style="display:flex; gap:0; height:100%; overflow:hidden;">
-
-    <!-- LINKER PANEEL: PDF tekst -->
-    <div style="flex:1; border-right:2px solid var(--border); display:flex; flex-direction:column; min-width:0;">
-      <!-- Upload zone -->
-      <div id="pdfUploadZone" style="padding:16px; background:var(--primary-light); border-bottom:1px solid var(--border); flex-shrink:0;">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <button onclick="openPdfFilePicker()" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:var(--primary); background:none; border:none; font-size:inherit; flex-shrink:0; padding:4px 0; min-height:44px;">
-            &#128194; PDF selecteren
-          </button>
-          <button id="aiAnalyseBtn" onclick="aiAnalyseerPdf()" style="display:none; background:#1B4B6B; color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0;">✨ AI Analyseren</button>
-        </div>
-        <p id="pdfStatus" style="font-size:12px; color:var(--text-secondary); margin-top:6px;">Nog geen bestand geladen</p>
-      </div>
-
-      <!-- Instructie -->
-      <div style="padding:8px 16px; background:#FFF8E1; border-bottom:1px solid var(--border); font-size:12px; color:#F57F17; flex-shrink:0;">
-        &#128161; Tik op een tekstblok om het toe te wijzen aan een projectveld
-      </div>
-
-      <!-- Tekst weergave -->
-      <div id="pdfTekstContainer" style="flex:1; overflow-y:auto; padding:16px; word-break:break-word;">
-        <p style="color:var(--text-secondary); text-align:center; margin-top:40px;">Laad een PDF om de tekst hier te zien</p>
-      </div>
-    </div>
-
-    <!-- RECHTER PANEEL: Formulier -->
-    <div style="flex:1; overflow-y:auto; padding:16px; min-width:0;">
-      <h3 style="color:var(--primary); margin-bottom:16px; font-size:16px;">Projectgegevens invullen</h3>
-
-      <div class="form-group">
-        <label>Projectnaam *</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="pi-naam" placeholder="Bijv. Nieuwbouw Dokter Wachterslaan 2" style="flex:1;">
-          <button onclick="clearImportVeld('pi-naam')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Zaaknummer / Vergunningnummer</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="pi-zaaknummer" placeholder="Wordt ingevuld via PDF of handmatig" style="flex:1;">
-          <button onclick="clearImportVeld('pi-zaaknummer')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Straat + huisnummer</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="pi-straat" placeholder="" style="flex:1;">
-          <button onclick="clearImportVeld('pi-straat')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Postcode</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="pi-postcode" placeholder="" style="flex:1;">
-          <button onclick="clearImportVeld('pi-postcode')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Plaats</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="pi-plaats" placeholder="" style="flex:1;">
-          <button onclick="clearImportVeld('pi-plaats')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Initiatiefnemer / Aanvrager</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="pi-initiatiefnemer" placeholder="" style="flex:1;">
-          <button onclick="clearImportVeld('pi-initiatiefnemer')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Activiteiten (omschrijving)</label>
-        <div style="display:flex; gap:8px; align-items:flex-start;">
-          <textarea id="pi-activiteiten" rows="2" placeholder="" style="flex:1;"></textarea>
-          <button onclick="clearImportVeld('pi-activiteiten')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;margin-top:10px;">&times;</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Datum afgifte vergunning</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="pi-datum" placeholder="" style="flex:1;">
-          <button onclick="clearImportVeld('pi-datum')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Vigerend bestemmingsplan / omgevingsplan</label>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="pi-bestemmingsplan" placeholder="" style="flex:1;">
-          <button onclick="clearImportVeld('pi-bestemmingsplan')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
-        </div>
-      </div>
-
-      <!-- Voorschriften -->
-      <div class="form-section-title" style="margin-top:16px;">Voorschriften</div>
-      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Tik op tekst in de PDF en kies "Voorschrift" om het toe te voegen. Tijdens controles vink je ze af.</p>
-      <div id="pi-voorschriftenLijst" style="margin-bottom:8px;"></div>
-      <button class="btn btn-secondary" onclick="voegVoorschriftToe()" style="width:100%; margin-bottom:16px;">+ Voorschrift handmatig toevoegen</button>
-
-      <!-- Acties -->
-      <div style="display:flex; gap:12px; margin-top:8px; padding-top:16px; border-top:1px solid var(--border);">
-        <button class="btn btn-primary" style="flex:1;" onclick="importeerNaarProject()">
-          &#10003; Project aanmaken met deze gegevens
-        </button>
-      </div>
-      <p id="pi-importStatus" style="font-size:12px; color:var(--text-secondary); margin-top:8px; text-align:center;"></p>
-    </div>
-  </div>
-</div>
-
-</main><!-- /main-area -->
-</div><!-- /tablet-shell -->
 
 <!-- ===== MODAL: ONDERWERP ===== -->
 <div class="modal-overlay" id="onderwerpModal">
@@ -1967,7 +1381,10 @@ html, body { height: 100%; overflow: hidden; }
 
     <div class="form-section-title" style="margin-top:16px;">Foto's bij dit onderwerp</div>
     <div id="om-fotoGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap:10px; margin-bottom:12px;"></div>
-    <button class="btn btn-secondary btn-block" style="margin-bottom:4px;" onclick="openOnderwerpFotoFilePicker()">&#128247; Foto toevoegen</button>
+    <label class="btn btn-secondary btn-block" style="cursor:pointer; margin-bottom:4px;">
+      📷 Foto toevoegen
+      <input type="file" accept="image/*" capture="environment" id="om-fotoInput" style="display:none;" onchange="handleOnderwerpFotoUpload(event)">
+    </label>
 
     <div class="form-section-title" style="margin-top:16px;">Vergunningsvoorschriften</div>
     <div id="om-voorschriftenContainer">
@@ -1977,6 +1394,125 @@ html, body { height: 100%; overflow: hidden; }
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeOnderwerpModal()">Annuleren</button>
       <button class="btn btn-primary" onclick="saveOnderwerp()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: PDF IMPORT ===== -->
+<div class="screen" id="screen-pdfImport">
+  <div style="display:flex; gap:0; height:calc(100vh - 60px); overflow:hidden;">
+    
+    <!-- LINKER PANEEL: PDF tekst -->
+    <div style="flex:1; border-right:2px solid var(--border); display:flex; flex-direction:column; min-width:0;">
+      <!-- Upload zone -->
+      <div id="pdfUploadZone" style="padding:16px; background:var(--primary-light); border-bottom:1px solid var(--border); flex-shrink:0;">
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; color:var(--primary);">
+          &#128194; PDF selecteren
+          <input type="file" accept="application/pdf" id="pdfFileInput" style="display:none;" onchange="handlePdfUpload(event)">
+        </label>
+        <p id="pdfStatus" style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Nog geen bestand geladen</p>
+      </div>
+      
+      <!-- Instructie -->
+      <div style="padding:8px 16px; background:#FFF8E1; border-bottom:1px solid var(--border); font-size:12px; color:#F57F17; flex-shrink:0;">
+        &#128161; Tik op een tekstblok om het toe te wijzen aan een projectveld
+      </div>
+      
+      <!-- Tekst weergave -->
+      <div id="pdfTekstContainer" style="flex:1; overflow-y:auto; padding:16px; word-break:break-word;">
+        <p style="color:var(--text-secondary); text-align:center; margin-top:40px;">Laad een PDF om de tekst hier te zien</p>
+      </div>
+    </div>
+    
+    <!-- RECHTER PANEEL: Formulier -->
+    <div style="flex:1; overflow-y:auto; padding:16px; min-width:0;">
+      <h3 style="color:var(--primary); margin-bottom:16px; font-size:16px;">Projectgegevens invullen</h3>
+      
+      <div class="form-group">
+        <label>Projectnaam *</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="pi-naam" placeholder="Bijv. Nieuwbouw Dokter Wachterslaan 2" style="flex:1;">
+          <button onclick="clearImportVeld('pi-naam')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Zaaknummer / Vergunningnummer</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="pi-zaaknummer" placeholder="Wordt ingevuld via PDF of handmatig" style="flex:1;">
+          <button onclick="clearImportVeld('pi-zaaknummer')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Straat + huisnummer</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="pi-straat" placeholder="" style="flex:1;">
+          <button onclick="clearImportVeld('pi-straat')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Postcode</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="pi-postcode" placeholder="" style="flex:1;">
+          <button onclick="clearImportVeld('pi-postcode')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Plaats</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="pi-plaats" placeholder="" style="flex:1;">
+          <button onclick="clearImportVeld('pi-plaats')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Initiatiefnemer / Aanvrager</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="pi-initiatiefnemer" placeholder="" style="flex:1;">
+          <button onclick="clearImportVeld('pi-initiatiefnemer')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Activiteiten (omschrijving)</label>
+        <div style="display:flex; gap:8px; align-items:flex-start;">
+          <textarea id="pi-activiteiten" rows="2" placeholder="" style="flex:1;"></textarea>
+          <button onclick="clearImportVeld('pi-activiteiten')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;margin-top:10px;">&times;</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Datum afgifte vergunning</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="pi-datum" placeholder="" style="flex:1;">
+          <button onclick="clearImportVeld('pi-datum')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Vigerend bestemmingsplan / omgevingsplan</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="pi-bestemmingsplan" placeholder="" style="flex:1;">
+          <button onclick="clearImportVeld('pi-bestemmingsplan')" style="background:none;border:none;color:#9E9E9E;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0;">&times;</button>
+        </div>
+      </div>
+      
+      <!-- Voorschriften -->
+      <div class="form-section-title" style="margin-top:16px;">Voorschriften</div>
+      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Tik op tekst in de PDF en kies "Voorschrift" om het toe te voegen. Tijdens controles vink je ze af.</p>
+      <div id="pi-voorschriftenLijst" style="margin-bottom:8px;"></div>
+      <button class="btn btn-secondary" onclick="voegVoorschriftToe()" style="width:100%; margin-bottom:16px;">+ Voorschrift handmatig toevoegen</button>
+      
+      <!-- Acties -->
+      <div style="display:flex; gap:12px; margin-top:8px; padding-top:16px; border-top:1px solid var(--border);">
+        <button class="btn btn-primary" style="flex:1;" onclick="importeerNaarProject()">
+          &#10003; Project aanmaken met deze gegevens
+        </button>
+      </div>
+      <p id="pi-importStatus" style="font-size:12px; color:var(--text-secondary); margin-top:8px; text-align:center;"></p>
     </div>
   </div>
 </div>
@@ -6067,10 +5603,10 @@ const BBL_ARTIKELEN = [
 
 // ===== CONSTANTS =====
 const SOORT_CONTROLE = ["Start uitvoering","Aanloopcontrole","Tussentijdse controle","Eindcontrole","Controle n.a.v. melding","Hercontrole","Handhavingscontrole"];
-const TYPE_ZAAK = ["Toezicht omgevingsvergunning","Melding handhaving","Handhavingsverzoek","Anders"];
+const TYPE_ZAAK = ["Bouwvergunning","Melding handhaving","Handhavingsverzoek","Anders"];
 const STANDAARD_ONDERWERPEN = ["Fundering","Casco/ruwbouw","Draagconstructie","Dakconstructie","Gevels/buitenschil","Brandcompartimentering","Vluchtwegen/nooduitgangen","Brandmeldinstallatie","Rookdoorvoeren","Brandwerende scheiding","Gebruiksfunctie/bezetting","Ventilatie/luchtverversing","Energieprestatie (BENG)","Toegankelijkheid","Kwaliteitsborging (Wkb)","Gereedmelding compleet","Anders"];
 const BBL_ONDERDELEN = ["Bbl Afdeling 2.1 - Constructieve veiligheid","Bbl Afdeling 2.2 - Brand","Bbl Afdeling 2.3 - Gezondheid","Bbl Afdeling 2.4 - Bruikbaarheid","Bbl Afdeling 2.5 - Duurzaamheid/Energie","Bbl Afdeling 2.6 - Veiligheid bij gebruik","Bbl Hoofdstuk 3 - Bestaande bouw","Bbl Hoofdstuk 4 - Tijdelijke bouw","Bbl Hoofdstuk 5 - Sloop"];
-const PROJECT_STATUS = ["Nog niet gestart","In uitvoering","Gereed","In te trekken"];
+const PROJECT_STATUS = ["Nog niet gestart","Open","In uitvoering","Opgeleverd","Afgehandeld"];
 const GEVOLGKLASSE = ["Gevolgklasse 1","Gevolgklasse 2","Gevolgklasse 3"];
 const ACTIVITEITEN = ["Technische bouwactiviteit","Omgevingsplanactiviteit","Brandveilig gebruik","Sloopactiviteit","Anders"];
 
@@ -6258,7 +5794,7 @@ function renderProjectList() {
     return datums.length ? datums.sort().pop() : '';
   };
 
-  const statusVolgorde = {'Nog niet gestart':0,'In uitvoering':1,'Gereed':2,'In te trekken':3};
+  const statusVolgorde = {'Nog niet gestart':0,'Open':1,'In uitvoering':2,'Opgeleverd':3,'Afgehandeld':4};
 
   filtered.sort((a, b) => {
     if (sorteer === 'laatste-controle') {
@@ -6280,7 +5816,7 @@ function renderProjectList() {
   }
 
   list.innerHTML = filtered.map(p => {
-    const statusClass = (p.status || 'Nog niet gestart').toLowerCase().replace(/ /g, '-');
+    const statusClass = (p.status || 'Open').toLowerCase().replace(/ /g, '-');
     const laatsteControle = getLaatsteControle(p);
     const aantalControles = (p.controles || []).length;
     const controleInfo = laatsteControle
@@ -6290,7 +5826,7 @@ function renderProjectList() {
       <div class="project-card" onclick="openProjectDetail('${p.id}')">
         <div class="card-top">
           <div class="project-name">${escapeHtml(p.naam || 'Naamloos')}</div>
-          <span class="status-chip ${statusClass}">${escapeHtml(p.status || 'Nog niet gestart')}</span>
+          <span class="status-chip ${statusClass}">${escapeHtml(p.status || 'Open')}</span>
         </div>
         <div class="project-meta">
           <span>&#128205; ${escapeHtml([p.straat, p.plaats].filter(Boolean).join(', ') || 'Geen adres')}</span>
@@ -6304,14 +5840,6 @@ function renderProjectList() {
       </div>
     `;
   }).join('');
-}
-
-// ===== STATUS KNOPPEN PROJECT FORM =====
-function selectPfStatus(value) {
-  document.getElementById('pf-status').value = value;
-  document.querySelectorAll('.pf-status-btn').forEach(btn => btn.classList.remove('active'));
-  const btn = document.querySelector(`.pf-status-btn[data-status="${value}"]`);
-  if (btn) btn.classList.add('active');
 }
 
 // ===== PROJECT FORM =====
@@ -6333,7 +5861,7 @@ function openProjectForm(projectId) {
       document.getElementById('pf-initContact').value = p.initContact || '';
       document.getElementById('pf-aannemerNaam').value = p.aannemerNaam || '';
       document.getElementById('pf-aannemerContact').value = p.aannemerContact || '';
-      selectPfStatus(p.status || 'Nog niet gestart');
+      document.getElementById('pf-status').value = p.status || 'Open';
       document.getElementById('pf-opmerkingen').value = p.opmerkingen || '';
       selectedActiviteiten = p.activiteiten || [];
     }
@@ -6350,7 +5878,7 @@ function openProjectForm(projectId) {
     document.getElementById('pf-initContact').value = '';
     document.getElementById('pf-aannemerNaam').value = '';
     document.getElementById('pf-aannemerContact').value = '';
-    selectPfStatus('Nog niet gestart');
+    document.getElementById('pf-status').value = 'Nog niet gestart';
     document.getElementById('pf-opmerkingen').value = '';
     document.getElementById('projectFormTitle').textContent = 'Nieuw Project';
   }
@@ -6395,13 +5923,6 @@ function saveProject() {
       const oud = projects[idx];
       const adresGewijzigd = oud.straat !== straat || oud.postcode !== postcode || oud.plaats !== plaats;
       if (!adresGewijzigd && oud.lat) { data.lat = oud.lat; data.lng = oud.lng; }
-      // Voeg geïmporteerde voorschriften toe bij bewerken (PDF-import)
-      if (pendingVoorschriften.length > 0) {
-        data.voorschriften = [...(oud.voorschriften || []), ...pendingVoorschriften];
-        pendingVoorschriften = [];
-        pendingBestemmingsplan = '';
-        pendingDatum = '';
-      }
       projects[idx] = { ...oud, ...data };
     }
     currentProjectId = editingProjectId;
@@ -6519,9 +6040,10 @@ function renderKaart() {
 
   const statusKleuren = {
     'Nog niet gestart': '#9E9E9E',
-    'In uitvoering':    '#E65100',
-    'Gereed':           '#2E7D32',
-    'In te trekken':    '#7B1FA2'
+    'Open': '#1B6B6B',
+    'In uitvoering': '#E65100',
+    'Opgeleverd': '#2E7D32',
+    'Afgehandeld': '#757575'
   };
 
   const bounds = [];
@@ -6540,7 +6062,7 @@ function renderKaart() {
     marker.bindPopup(`
       <strong>${escapeHtml(p.naam)}</strong><br>
       ${escapeHtml([p.straat, p.plaats].filter(Boolean).join(', '))}<br>
-      <span style="color:${kleur}; font-weight:600;">${p.status || 'Nog niet gestart'}</span><br>
+      <span style="color:${kleur}; font-weight:600;">${p.status || 'Open'}</span><br>
       ${laatste ? '📅 ' + formatDate(laatste.datum) : 'Nog geen controles'}<br>
       <a href="#" onclick="event.preventDefault(); kaartNaarProject('${p.id}')" style="color:var(--primary);">Ga naar project →</a>
     `);
@@ -6642,7 +6164,7 @@ function renderProjectDetail() {
          </span>`
       : '-')}
     ${detailItem('Type zaak', p.typeZaak || '-')}
-    ${detailItem('Status', `<span class="status-chip ${(p.status||'nog-niet-gestart').toLowerCase().replace(/ /g,'-')}">${escapeHtml(p.status || 'Nog niet gestart')}</span>`)}
+    ${detailItem('Status', `<span class="status-chip ${(p.status||'').toLowerCase().replace(/ /g,'-')}">${escapeHtml(p.status || 'Open')}</span>`)}
     ${detailItem('Straat + huisnummer', p.straat || '-')}
     ${detailItem('Postcode', p.postcode || '-')}
     ${detailItem('Plaats', p.plaats || '-')}
@@ -6999,7 +6521,7 @@ function saveControle() {
   }
 
   // Start uitvoering → zet projectstatus automatisch op 'In uitvoering'
-  if (data.soort === 'Start uitvoering' && projects[pIdx].status !== 'In te trekken' && projects[pIdx].status !== 'Gereed') {
+  if (data.soort === 'Start uitvoering' && projects[pIdx].status !== 'Afgehandeld' && projects[pIdx].status !== 'Opgeleverd') {
     projects[pIdx].status = 'In uitvoering';
     projects[pIdx].startUitvoeringDatum = data.datum;
   }
@@ -7095,7 +6617,10 @@ function renderControleDetail() {
     <div class="settings-card" style="margin-top:12px;">
       <h3>Foto's</h3>
       <div id="fotoGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom:12px;"></div>
-      <button class="btn btn-secondary btn-block" onclick="openFotoFilePicker()">&#128247; Foto toevoegen</button>
+      <label class="btn btn-secondary btn-block" style="cursor:pointer;">
+        &#128247; Foto toevoegen
+        <input type="file" accept="image/*" capture="environment" id="fotoInput" style="display:none;" onchange="handleFotoUpload(event)">
+      </label>
     </div>
   `;
 
@@ -7618,7 +7143,8 @@ function getFotosForOnderwerp(onderwerpId) {
   } catch(e) { return []; }
 }
 
-function handleOnderwerpFotoFile(file) {
+function handleOnderwerpFotoUpload(event) {
+  const file = event.target.files[0];
   if (!file || !currentOnderwerpId) return;
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -7632,6 +7158,8 @@ function handleOnderwerpFotoFile(file) {
     };
     saveFoto(foto);
     renderOnderwerpFotoGrid(currentOnderwerpId);
+    const inp = document.getElementById('om-fotoInput');
+    if (inp) inp.value = '';
   };
   reader.readAsDataURL(file);
 }
@@ -7684,7 +7212,8 @@ function deleteFoto(fotoId) {
 }
 
 // ===== FOTO UPLOAD =====
-function handleFotoFile(file) {
+function handleFotoUpload(event) {
+  const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -7697,6 +7226,8 @@ function handleFotoFile(file) {
     };
     saveFoto(foto);
     renderFotoGrid(currentControleId);
+    const inp = document.getElementById('fotoInput');
+    if (inp) inp.value = '';
   };
   reader.readAsDataURL(file);
 }
@@ -7735,7 +7266,8 @@ function updateFotoToelichting(fotoId, toelichting) {
 }
 
 // ===== LOGO FUNCTIES =====
-function handleLogoFile(file) {
+function handleLogoUpload(event) {
+  const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -7762,6 +7294,8 @@ function showLogoPreview(dataUrl) {
 function removeLogo() {
   storage.removeItem('vth_logo');
   showLogoPreview(null);
+  const inp = document.getElementById('logoInput');
+  if (inp) inp.value = '';
   showToast('Logo verwijderd');
 }
 
@@ -7771,9 +7305,6 @@ function loadSettings() {
   document.getElementById('set-gemeentenaam').value = s.gemeentenaam || '';
   document.getElementById('set-toezichthouder').value = s.toezichthouder || '';
   document.getElementById('set-rp-apikey').value = s.rpApiKey || '';
-  document.getElementById('set-anthropic-apikey').value = s.anthropicApiKey || '';
-  document.getElementById('set-ai-proxy').value = s.aiProxyUrl || '';
-  document.getElementById('set-ai-proxy').value = s.aiProxyUrl || '';
   // Laad logo preview
   const logo = storage.getItem('vth_logo') || '';
   showLogoPreview(logo || null);
@@ -7783,10 +7314,7 @@ function saveSettings() {
   const data = {
     gemeentenaam: document.getElementById('set-gemeentenaam').value.trim(),
     toezichthouder: document.getElementById('set-toezichthouder').value.trim(),
-    rpApiKey: document.getElementById('set-rp-apikey').value.trim(),
-    anthropicApiKey: document.getElementById('set-anthropic-apikey').value.trim(),
-    aiProxyUrl: document.getElementById('set-ai-proxy').value.trim(),
-    aiProxyUrl: document.getElementById('set-ai-proxy').value.trim()
+    rpApiKey: document.getElementById('set-rp-apikey').value.trim()
   };
   saveSettingsData(data);
   showToast('Instellingen opgeslagen');
@@ -8095,30 +7623,6 @@ function updateToetsniveauInfo(onderwerpNaam) {
   }
 }
 
-// ===== BESTAND KIEZER =====
-// Dynamisch aanmaken van input binnen click-event: bypassed Safari overflow:hidden
-// clipping én de iOS-beveiliging tegen input.click() op bestaande elementen.
-function _pickFile(accept, capture, callback) {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = accept;
-  if (capture) input.setAttribute('capture', capture);
-  input.style.cssText = 'position:fixed;top:-200px;left:-200px;opacity:0;width:1px;height:1px;';
-  document.body.appendChild(input);
-  input.addEventListener('change', function() {
-    if (input.files && input.files[0]) callback(input.files[0]);
-    if (document.body.contains(input)) document.body.removeChild(input);
-  });
-  input.addEventListener('cancel', function() {
-    if (document.body.contains(input)) document.body.removeChild(input);
-  });
-  input.click();
-}
-function openPdfFilePicker()           { _pickFile('.pdf,application/pdf', null,          function(f){ handlePdfFile(f); }); }
-function openFotoFilePicker()          { _pickFile('image/*',              'environment',  function(f){ handleFotoFile(f); }); }
-function openOnderwerpFotoFilePicker() { _pickFile('image/*',              'environment',  function(f){ handleOnderwerpFotoFile(f); }); }
-function openLogoFilePicker()          { _pickFile('image/*',              null,           function(f){ handleLogoFile(f); }); }
-
 // ===== PDF IMPORT =====
 let huidigePdfTekst = null;
 let geselecteerdePdfTekst = '';
@@ -8210,7 +7714,8 @@ async function extractPdfText(arrayBuffer) {
   }
 }
 
-async function handlePdfFile(file) {
+async function handlePdfUpload(event) {
+  const file = event.target.files[0];
   if (!file) return;
   document.getElementById('pdfStatus').textContent = 'Bezig met laden...';
   document.getElementById('pdfTekstContainer').innerHTML = '<p style="color:var(--text-secondary); text-align:center; margin-top:40px;">⏳ PDF wordt gelezen...</p>';
@@ -8228,145 +7733,9 @@ async function handlePdfFile(file) {
     document.getElementById('pdfStatus').textContent = '✓ ' + file.name + ' — ' + tekstBlokken.length + ' tekstregels gevonden';
     huidigePdfTekst = tekstBlokken;
     renderPdfTekst(tekstBlokken);
-    // Toon AI-knop als er een Anthropic API-key is ingesteld
-    const aiBtn = document.getElementById('aiAnalyseBtn');
-    if (aiBtn) aiBtn.style.display = getSettings().anthropicApiKey ? '' : 'none';
   } catch(err) {
     document.getElementById('pdfStatus').textContent = '⚠️ Fout bij lezen: ' + err.message;
     document.getElementById('pdfTekstContainer').innerHTML = '<p style="color:#C62828; text-align:center; margin-top:40px;">Fout bij inlezen PDF.<br><small>' + err.message + '</small></p>';
-  }
-}
-
-async function aiAnalyseerPdf() {
-  const apiKey = getSettings().anthropicApiKey;
-  if (!apiKey) { showToast('Stel een Anthropic API-key in bij Instellingen'); return; }
-  if (!huidigePdfTekst || huidigePdfTekst.length === 0) { showToast('Laad eerst een PDF'); return; }
-
-  // Diagnose: file:// protocol werkt niet voor externe API-calls
-  if (window.location.protocol === 'file:') {
-    showToast('⚠️ AI werkt niet via file://. Open de app via een webserver.');
-    document.getElementById('pdfStatus').textContent = '⚠️ Niet beschikbaar via file://. Gebruik een webserver.';
-    return;
-  }
-
-  const proxyUrl = getSettings().aiProxyUrl;
-  if (!proxyUrl) {
-    showToast('⚠️ Stel een AI Proxy URL in bij Instellingen (CORS vereist een proxy)');
-    document.getElementById('pdfStatus').textContent =
-      '⚠️ AI-analyse vereist een proxy-URL. Ga naar Instellingen → AI Proxy URL. ' +
-      'Upload ai-proxy.php naar uw webserver en vul de URL in.';
-    return;
-  }
-
-  const btn = document.getElementById('aiAnalyseBtn');
-  const statusEl = document.getElementById('pdfStatus');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ AI analyseert...'; }
-  if (statusEl) statusEl.textContent = '🤖 Bezig met AI-analyse van de vergunning...';
-
-  // Begrens tekst op 24.000 tekens om binnen tokenlimieten te blijven
-  const volledigeTekst = huidigePdfTekst.join('\n');
-  const tekst = volledigeTekst.length > 24000 ? volledigeTekst.substring(0, 24000) + '\n[tekst afgekapt]' : volledigeTekst;
-
-  const prompt = `Je bent een expert in Nederlandse omgevingsvergunningen en gemeentelijke VTH-processen. Analyseer de onderstaande tekst uit een vergunning-PDF en extraheer de gevraagde gegevens.
-
-Vergunning-tekst:
----
-${tekst}
----
-
-Geef je antwoord UITSLUITEND als geldig JSON (geen uitleg, geen markdown, geen backticks):
-{
-  "zaaknummer": "string of null",
-  "straat": "straatnaam inclusief huisnummer of null",
-  "postcode": "formaat 1234AB of null",
-  "plaats": "plaatsnaam of null",
-  "initiatiefnemer": "volledige naam van aanvrager of initiatiefnemer of null",
-  "activiteiten": "omschrijving van de hoofdactiviteit waarvoor de vergunning is verleend of null",
-  "datum": "vergunningsdatum in formaat DD-MM-YYYY of null",
-  "bestemmingsplan": "naam van het geldende bestemmingsplan of omgevingsplan of null",
-  "voorschriften": ["volledig voorschrift 1 inclusief nummer", "volledig voorschrift 2", ...]
-}
-
-Regels voor voorschriften:
-- Extraheer ALLE genummerde of aangeduide voorschriften, bepalingen en verbonden voorwaarden
-- Geef elk voorschrift als volledige zin inclusief artikelnummer of nummerprefix
-- Zoek ook in secties met namen als "Verbonden voorschriften", "Voorwaarden", "Bepalingen", "Vergunningsvoorschriften"
-- Als er geen voorschriften aanwezig zijn: geef een lege array []`;
-
-  try {
-    const response = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      let msg = `API fout ${response.status}`;
-      try { const j = JSON.parse(errText); msg += ': ' + (j.error?.message || errText); } catch(e) { msg += ': ' + errText.substring(0, 120); }
-      throw new Error(msg);
-    }
-
-    const data = await response.json();
-    const content = data.content[0].text.trim();
-
-    let extracted;
-    try {
-      // Strip eventuele markdown code-blocks
-      const cleaned = content.replace(/^```(?:json)?\n?/,'').replace(/\n?```$/,'').trim();
-      extracted = JSON.parse(cleaned);
-    } catch(parseErr) {
-      throw new Error('AI-respons kon niet worden verwerkt als JSON');
-    }
-
-    // Vul formuliervelden in (overschrijf alleen lege velden)
-    const veld = (id, waarde) => {
-      if (!waarde) return false;
-      const el = document.getElementById(id);
-      if (el && !el.value.trim()) { el.value = waarde; return true; }
-      return false;
-    };
-
-    let aantalVelden = 0;
-    if (veld('pi-zaaknummer',     extracted.zaaknummer))     aantalVelden++;
-    if (veld('pi-straat',         extracted.straat))         aantalVelden++;
-    if (veld('pi-postcode',       extracted.postcode))       aantalVelden++;
-    if (veld('pi-plaats',         extracted.plaats))         aantalVelden++;
-    if (veld('pi-initiatiefnemer',extracted.initiatiefnemer))aantalVelden++;
-    if (veld('pi-activiteiten',   extracted.activiteiten))   aantalVelden++;
-    if (veld('pi-datum',          extracted.datum))           aantalVelden++;
-    if (veld('pi-bestemmingsplan',extracted.bestemmingsplan))aantalVelden++;
-
-    // Voeg geëxtraheerde voorschriften toe
-    let aantalVoorschriften = 0;
-    if (Array.isArray(extracted.voorschriften)) {
-      extracted.voorschriften.forEach(v => {
-        if (v && v.trim()) { voegVoorschriftToeMetTekst(v.trim()); aantalVoorschriften++; }
-      });
-    }
-
-    if (statusEl) statusEl.textContent = `✓ AI: ${aantalVelden} veld(en) en ${aantalVoorschriften} voorschrift(en) gevonden`;
-    showToast(`✨ AI: ${aantalVelden} velden en ${aantalVoorschriften} voorschriften geëxtraheerd`);
-
-  } catch(err) {
-    // Diagnose specifieke foutsoorten
-    let uitleg = err.message || 'onbekende fout';
-    const isNetwerk = /load failed|failed to fetch|network/i.test(uitleg);
-    if (isNetwerk) {
-      uitleg = 'Netwerk/CORS-fout — controleer: 1) internetverbinding, 2) Safari "Prevent Cross-Site Tracking" uit, 3) app via http:// (niet file://)';
-    }
-    if (statusEl) statusEl.textContent = '⚠️ AI-analyse mislukt: ' + uitleg;
-    showToast('AI mislukt: ' + (isNetwerk ? 'netwerkfout — zie statusbalk' : err.message));
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '✨ AI Analyseren'; }
   }
 }
 
@@ -8529,13 +7898,13 @@ function importeerNaarProject() {
   pendingDatum = datum;
 
   // Open het projectformulier met de geïmporteerde gegevens vooringevuld
-  // editingProjectId behouden: als we vanuit bewerken kwamen, blijft het bewerkproject actief
+  editingProjectId = null;
   selectedActiviteiten = activiteiten ? [activiteiten] : [];
 
   // Vul alle velden in — projectnaam: eerst ingevuld veld, dan zaaknummer, dan adres
   document.getElementById('pf-naam').value = naam || zaaknummer || ([straat, postcode, plaats].filter(Boolean).join(' '));
   document.getElementById('pf-zaaknummer').value = zaaknummer;
-  document.getElementById('pf-typeZaak').value = 'Toezicht omgevingsvergunning';
+  document.getElementById('pf-typeZaak').value = 'Bouwvergunning';
   document.getElementById('pf-straat').value = straat;
   document.getElementById('pf-postcode').value = postcode;
   document.getElementById('pf-plaats').value = plaats;
@@ -8544,20 +7913,17 @@ function importeerNaarProject() {
   document.getElementById('pf-initContact').value = '';
   document.getElementById('pf-aannemerNaam').value = '';
   document.getElementById('pf-aannemerContact').value = '';
-  selectPfStatus('Nog niet gestart');
+  document.getElementById('pf-status').value = 'Nog niet gestart';
   document.getElementById('pf-opmerkingen').value = bestemmingsplan ? 'Bestemmingsplan: ' + bestemmingsplan + (datum ? '\nDatum vergunning: ' + datum : '') : (datum ? 'Datum vergunning: ' + datum : '');
-  document.getElementById('projectFormTitle').textContent = editingProjectId ? 'Project Bewerken (uit PDF)' : 'Nieuw Project (uit vergunning)';
+  document.getElementById('projectFormTitle').textContent = 'Nieuw Project (uit vergunning)';
 
   renderActiviteitenSelect();
 
   // Reset importscherm
   resetPdfImportScherm();
 
-  // Navigeer naar projectformulier — gebruik showScreen (niet navigateTo) om te voorkomen
-  // dat 'pdfImport' op de navigatiestapel terechtkomt. Verwijder ook 'projectForm' uit de
-  // stapel zodat "Terug" vanuit het formulier naar het juiste scherm terugkeert.
-  if (navigationStack[navigationStack.length - 1] === 'projectForm') navigationStack.pop();
-  showScreen('projectForm');
+  // Navigeer naar projectformulier
+  navigateTo('projectForm');
 
   showToast('Gegevens overgenomen — controleer en sla op');
 }
@@ -8570,6 +7936,8 @@ function resetPdfImportScherm() {
   if (statusEl) statusEl.textContent = 'Nog geen bestand geladen';
   const container = document.getElementById('pdfTekstContainer');
   if (container) container.innerHTML = '<p style="color:var(--text-secondary); text-align:center; margin-top:40px;">Laad een PDF om de tekst hier te zien</p>';
+  const fileInput = document.getElementById('pdfFileInput');
+  if (fileInput) fileInput.value = '';
   ['pi-naam','pi-zaaknummer','pi-straat','pi-postcode','pi-plaats','pi-initiatiefnemer','pi-datum','pi-bestemmingsplan'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -8924,7 +8292,7 @@ function dsoFoutMelding(tekst) {
 const STANDAARD_SJABLONEN = [
   {
     id: 'tpl_dakkapel_eerste', naam: 'Dakkapel — aanloopcontrole',
-    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Aanloopcontrole',
+    zaaktype: 'Bouwvergunning', soort: 'Aanloopcontrole',
     onderwerpen: [
       { naam: 'Bouwveiligheid omgeving', beschrijving: 'Controleer of de omgeving veilig is afgeschermd (steigers, vangnetten).', bblArtikel: '4.1' },
       { naam: 'Maatvoering dakkapel', beschrijving: 'Controleer hoogte, breedte en diepte conform de vergunde tekening.', bblArtikel: '4.34' },
@@ -8934,7 +8302,7 @@ const STANDAARD_SJABLONEN = [
   },
   {
     id: 'tpl_dakkapel_eind', naam: 'Dakkapel — eindcontrole',
-    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Eindcontrole',
+    zaaktype: 'Bouwvergunning', soort: 'Eindcontrole',
     onderwerpen: [
       { naam: 'Waterdichtheid aansluiting dak', beschrijving: 'Controleer kitvoeg, loodslabben en dakbedekking rondom dakkapel.', bblArtikel: '4.40' },
       { naam: 'Brandveiligheid dakbedekking', beschrijving: 'Controleer of dakbedekking voldoet aan brandklasse vereisten.', bblArtikel: '3.9' },
@@ -8945,7 +8313,7 @@ const STANDAARD_SJABLONEN = [
   },
   {
     id: 'tpl_aanbouw_ruwbouw', naam: 'Aanbouw/uitbouw — ruwbouw',
-    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Tussentijdse controle',
+    zaaktype: 'Bouwvergunning', soort: 'Tussentijdse controle',
     onderwerpen: [
       { naam: 'Fundering', beschrijving: 'Controleer funderingsdiepte, -breedte en -type conform berekening.', bblArtikel: '4.20' },
       { naam: 'Constructieve veiligheid', beschrijving: 'Controleer wanden, balken en draagconstructie conform constructieberekening.', bblArtikel: '4.2' },
@@ -8955,7 +8323,7 @@ const STANDAARD_SJABLONEN = [
   },
   {
     id: 'tpl_aanbouw_eind', naam: 'Aanbouw/uitbouw — eindcontrole',
-    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Eindcontrole',
+    zaaktype: 'Bouwvergunning', soort: 'Eindcontrole',
     onderwerpen: [
       { naam: 'Maatvoering conform vergunning', beschrijving: 'Eindmeting situering, oppervlak en hoogte conform vergunning.', bblArtikel: '4.34' },
       { naam: 'Thermische isolatie', beschrijving: 'Controleer Rc-waarde isolatie gevels, dak en vloer.', bblArtikel: '4.175' },
@@ -8967,7 +8335,7 @@ const STANDAARD_SJABLONEN = [
   },
   {
     id: 'tpl_isolatie', naam: 'Isolatie / gevelrenovatie',
-    zaaktype: 'Toezicht omgevingsvergunning', soort: 'Tussentijdse controle',
+    zaaktype: 'Bouwvergunning', soort: 'Tussentijdse controle',
     onderwerpen: [
       { naam: 'Isolatiemateriaal en dikte', beschrijving: 'Controleer type isolatie, Rd-waarde en dikte conform bestek.', bblArtikel: '4.175' },
       { naam: 'Dampscherm', beschrijving: 'Controleer aanwezigheid en correcte overlapping van dampscherm/folie.', bblArtikel: '4.40' },
@@ -9233,25 +8601,11 @@ function parseZaakonderwerp(onderwerp) {
 }
 
 function xlsStatusNaarApp(status) {
-  if (!status) return 'Nog niet gestart';
+  if (!status) return 'Open';
   const s = status.toLowerCase().trim();
-  if (s === 'resolved' || s === 'gereed' || s === 'opgeleverd') return 'Gereed';
-  if (s === 'in uitvoering' || s === 'open') return 'In uitvoering';
-  if (s === 'in te trekken' || s === 'afgehandeld' || s === 'ingetrokken') return 'In te trekken';
-  if (s === 'nog niet gestart') return 'Nog niet gestart';
-  return 'Nog niet gestart';
-}
-
-function xlsZaaktypeNaarApp(zaaktype) {
-  if (!zaaktype) return '';
-  const z = zaaktype.toLowerCase().trim();
-  if (z.startsWith('toezicht omgevingsvergunning') || z.startsWith('toezicht omgevinigsvergunning')) {
-    return 'Toezicht omgevingsvergunning';
-  }
-  if (z.includes('melding handhaving')) return 'Melding handhaving';
-  if (z.includes('handhavingsverzoek') || z.startsWith('verzoek tot handha')) return 'Handhavingsverzoek';
-  // Bewaar originele waarde als fallback
-  return zaaktype.trim();
+  if (s === 'resolved') return 'Opgeleverd';
+  if (s === 'open') return 'Open';
+  return 'Open';
 }
 
 function handleXlsFile(event) {
@@ -9338,7 +8692,7 @@ function vulXlsPreviewTabel() {
   xlsRijen.forEach((rij, idx) => {
     const tr = document.createElement('tr');
     if (rij.isDuplicaat) tr.className = 'xls-duplicate';
-    const statusKlasse = rij.statusApp === 'Gereed' ? 'xls-status-resolved' : 'xls-status-open';
+    const statusKlasse = rij.statusApp === 'Opgeleverd' ? 'xls-status-resolved' : 'xls-status-open';
     const adresTekst = [rij.straat, rij.postcode + (rij.plaats ? ' ' + rij.plaats : '')].filter(Boolean).join(', ');
     tr.innerHTML = `
       <td><input type="checkbox" data-idx="${idx}" ${rij.geselecteerd ? 'checked' : ''}
@@ -9384,7 +8738,7 @@ async function importeerXlsGeselecteerd() {
       id: generateId(),
       naam: rij.naam || ('Zaak ' + rij.zaakNr),
       zaaknummer: rij.zaakNr,
-      typeZaak: xlsZaaktypeNaarApp(rij.zaakType) || 'Toezicht omgevingsvergunning',
+      typeZaak: rij.zaakType || 'Bouwvergunning',
       status: rij.statusApp,
       straat: rij.straat,
       postcode: rij.postcode,
@@ -9414,31 +8768,8 @@ async function importeerXlsGeselecteerd() {
   }, 1500);
 }
 
-// ===== DATA MIGRATIE — normaliseer oude type/status waarden =====
-function migreerLegacyData() {
-  const geldigeTypes   = new Set(['Toezicht omgevingsvergunning','Melding handhaving','Handhavingsverzoek','Anders']);
-  const geldigeStatussen = new Set(['Nog niet gestart','In uitvoering','Gereed','In te trekken']);
-
-  const projects = getProjects();
-  let gewijzigd = false;
-
-  projects.forEach(p => {
-    if (!geldigeTypes.has(p.typeZaak)) {
-      p.typeZaak = 'Anders';
-      gewijzigd = true;
-    }
-    if (!geldigeStatussen.has(p.status)) {
-      p.status = 'Nog niet gestart';
-      gewijzigd = true;
-    }
-  });
-
-  if (gewijzigd) saveProjects(projects);
-}
-
 // ===== INIT =====
 function init() {
-  migreerLegacyData();
   loadSettings();
   renderProjectList();
   
@@ -9447,952 +8778,17 @@ function init() {
   // Handle settings screen showing
 }
 
-// ===== TABLET NAVIGATION =====
-// Overwrite showScreen to support tablet layout
-const _origShowScreen = showScreen;
+// Handle settings navigation specially
+const origShowScreen = showScreen;
 showScreen = function(screenId) {
-  // Hide all screens
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const screen = document.getElementById('screen-' + screenId);
-  if (screen) screen.classList.add('active');
-
-  // Sidenav active state
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navMap = {
-    'projectList': 'nav-zaken',
-    'projectDetail': 'nav-zaken',
-    'controleForm': 'nav-zaken',
-    'controleDetail': 'nav-zaken',
-    'settings': 'nav-settings',
-    'printReport': 'nav-zaken',
-    'pdfImport': 'nav-zaken'
-  };
-  const navId = navMap[screenId] || 'nav-zaken';
-  const navEl = document.getElementById(navId);
-  if (navEl) navEl.classList.add('active');
-
+  origShowScreen(screenId);
   if (screenId === 'settings') {
     loadSettings();
-  }
-  if (screenId === 'projectDetail') {
-    tabletRenderSplitList();
-    tabletUpdateDetailHeader();
-  }
-  if (screenId === 'projectList') {
-    tabletRenderStats();
-    tabletRenderVandaag();
-  }
-};
-
-function tabletGo(screenId) {
-  if (screenId === 'projectList') {
-    navigationStack = [];
-    showScreen('projectList');
-    if (huidigView === 'kaart') setView('lijst');
-    renderProjectList();
-  } else if (screenId === 'kaartView') {
-    navigationStack = [];
-    showScreen('projectList');
-    setView('kaart');
-  } else if (screenId === 'rapporten') {
-    showToast('Rapporten — open een controle en kies "Genereer Rapport"');
-  } else if (screenId === 'settings') {
     navigationStack = ['projectList'];
-    showScreen('settings');
-  } else {
-    navigateTo(screenId);
   }
-}
-
-// Override openProjectDetail for split view
-const _origOpenProjectDetail = openProjectDetail;
-openProjectDetail = function(id) {
-  currentProjectId = id;
-  showScreen('projectDetail');
-  renderProjectDetail();
-  switchTab('basis', document.querySelector('#screen-projectDetail .tab-btn'));
-};
-
-function tabletRenderSplitList() {
-  const projects = getProjects();
-  const search = (document.getElementById('searchBar') || {}).value?.toLowerCase() || '';
-  let filtered = projects.filter(p => {
-    if (!search) return true;
-    return (p.naam||'').toLowerCase().includes(search) ||
-           (p.straat||'').toLowerCase().includes(search) ||
-           (p.zaaknummer||'').toLowerCase().includes(search);
-  });
-  if (currentFilter && currentFilter !== 'all') {
-    if (currentFilter.startsWith('type-')) filtered = filtered.filter(p => p.typeZaak === currentFilter.replace('type-',''));
-    if (currentFilter.startsWith('status-')) filtered = filtered.filter(p => p.status === currentFilter.replace('status-',''));
-  }
-  const statusKleuren = {'Nog niet gestart':'#9E9E9E','In uitvoering':'#E65100','Gereed':'#2E7D32','In te trekken':'#7B1FA2'};
-  const cont = document.getElementById('splitProjectList');
-  if (!cont) return;
-  if (filtered.length === 0) {
-    cont.innerHTML = '<div style="padding:20px;text-align:center;color:#888;font-size:13px;">Geen projecten</div>';
-    return;
-  }
-  cont.innerHTML = filtered.map(p => {
-    const kleur = statusKleuren[p.status] || '#1B6B6B';
-    const sel = p.id === currentProjectId ? ' selected' : '';
-    return `<div class="split-project-card${sel}" onclick="openProjectDetail('${p.id}')" style="border-left:4px solid ${kleur};">
-      <div class="sp-name">${escapeHtml(p.naam||'Naamloos')}</div>
-      <div class="sp-meta">📍 ${escapeHtml([p.straat,p.plaats].filter(Boolean).join(', ')||'Geen adres')} · <span style="color:${kleur};font-weight:600;">${escapeHtml(p.status||'Nog niet gestart')}</span></div>
-    </div>`;
-  }).join('');
-}
-
-function tabletUpdateDetailHeader() {
-  const p = getProjects().find(x => x.id === currentProjectId);
-  if (!p) return;
-  const title = document.getElementById('dh-title');
-  const addr = document.getElementById('dh-addr');
-  const statusEl = document.getElementById('dh-status');
-  const links = document.getElementById('dh-links');
-  if (title) title.textContent = p.naam || 'Naamloos';
-  if (addr) addr.textContent = [p.straat, p.postcode, p.plaats].filter(Boolean).join(' · ') || 'Geen adres';
-  const statusClass = (p.status||'nog-niet-gestart').toLowerCase().replace(/ /g,'-');
-  if (statusEl) { statusEl.className = 'status-chip ' + statusClass; statusEl.textContent = p.status || 'Nog niet gestart'; }
-  if (links) {
-    let html = '';
-    if (p.zaaknummer) html += `<a href="https://mijn.waalre.nl/intern/zaak/${encodeURIComponent(p.zaaknummer)}" target="_blank" class="dh-link">📂 Zaaksysteem</a>`;
-    if (p.lat && p.lng) {
-      const url = p.rdX && p.rdY
-        ? `https://omgevingswet.overheid.nl/regels-op-de-kaart/zoeken/locatie?locatie-stelsel=RD&locatie-x=${Math.round(p.rdX)}&locatie-y=${Math.round(p.rdY)}`
-        : `https://omgevingswet.overheid.nl/regels-op-de-kaart/zoeken/locatie?locatie-stelsel=ETRS89&locatie-x=${p.lng}&locatie-y=${p.lat}`;
-      html += `<a href="${url}" target="_blank" class="dh-link">🗺️ Regels op kaart</a>`;
-    }
-    html += `<button class="dh-link" onclick="openControleForm()">＋ Nieuwe controle</button>`;
-    links.innerHTML = html;
-  }
-}
-
-// ===== VANDAAG PANEL =====
-let _vandaagOpen = true;
-
-function tabletToggleVandaag() {
-  _vandaagOpen = !_vandaagOpen;
-  const panel = document.getElementById('vandaagPanel');
-  const col = document.getElementById('listCol');
-  const arrow = document.getElementById('vandaagBtnArrow');
-  const btn = document.getElementById('vandaagBtn');
-  if (_vandaagOpen) {
-    panel.classList.remove('hidden');
-    if (col) col.style.marginRight = '260px';
-    if (arrow) arrow.textContent = '›';
-    if (btn) { btn.style.background = '#1B6B6B'; }
-  } else {
-    panel.classList.add('hidden');
-    if (col) col.style.marginRight = '0';
-    if (arrow) arrow.textContent = '‹';
-    if (btn) { btn.style.background = '#2E8B8B'; }
-  }
-}
-
-function tabletRenderVandaag() {
-  const el = document.getElementById('vandaagDatum');
-  const inhoud = document.getElementById('vandaagInhoud');
-  if (el) {
-    const nu = new Date();
-    el.textContent = nu.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-  }
-  if (!inhoud) return;
-
-  const projects = getProjects();
-  const statusKleuren = {'Nog niet gestart':'#9E9E9E','In uitvoering':'#E65100','Gereed':'#2E7D32','In te trekken':'#7B1FA2'};
-
-  // Status verdeling
-  const counts = {'Nog niet gestart':0,'In uitvoering':0,'Gereed':0,'In te trekken':0};
-  projects.forEach(p => { if (counts[p.status] !== undefined) counts[p.status]++; });
-  const totaal = projects.length || 1;
-
-  let html = `<div style="margin-bottom:14px;">
-    <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Statusverdeling (${projects.length})</div>
-    <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;">
-      ${Object.entries(counts).map(([s,n]) => n > 0 ? `<div style="background:${statusKleuren[s]};flex:${n};" title="${s}: ${n}"></div>` : '').join('')}
-    </div>
-    <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;">
-      ${Object.entries(counts).filter(([,n])=>n>0).map(([s,n])=>`
-        <div style="display:flex;align-items:center;gap:6px;font-size:11px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:${statusKleuren[s]};flex-shrink:0;"></div>
-          <span style="flex:1;color:#444;">${s}</span>
-          <span style="font-weight:700;color:#222;">${n}</span>
-        </div>`).join('')}
-    </div>
-  </div>`;
-
-  // Recente activiteit
-  const recentControles = [];
-  projects.forEach(p => {
-    (p.controles||[]).forEach(c => {
-      if (c.datum) recentControles.push({...c, projectNaam: p.naam, projectId: p.id});
-    });
-  });
-  recentControles.sort((a,b) => (b.datum||'').localeCompare(a.datum||''));
-  const recent = recentControles.slice(0,5);
-
-  if (recent.length > 0) {
-    html += `<div style="margin-bottom:14px;">
-      <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Recente controles</div>`;
-    recent.forEach(c => {
-      const kleur = {'akkoord':'#2E7D32','akkoord-mits':'#E65100','niet-akkoord':'#C62828'}[c.algemeenResultaat] || '#9E9E9E';
-      const icon = {'akkoord':'✅','akkoord-mits':'⚠️','niet-akkoord':'❌'}[c.algemeenResultaat] || '📋';
-      html += `<div onclick="openProjectDetail('${c.projectId}')" style="padding:8px 10px;background:#F8F9FA;border-radius:8px;margin-bottom:6px;cursor:pointer;border-left:3px solid ${kleur};">
-        <div style="font-size:12px;font-weight:600;color:#1B3A52;">${escapeHtml(c.projectNaam)}</div>
-        <div style="font-size:11px;color:#888;margin-top:1px;">${icon} ${escapeHtml(c.soort||'Controle')} · ${formatDate(c.datum)}</div>
-      </div>`;
-    });
-    html += `</div>`;
-  }
-
-  // Zaken zonder controles
-  const geenControle = projects.filter(p => !p.controles || p.controles.length === 0).slice(0,4);
-  if (geenControle.length > 0) {
-    html += `<div><div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Nog geen controles</div>`;
-    geenControle.forEach(p => {
-      html += `<div onclick="openProjectDetail('${p.id}')" style="padding:8px 10px;background:#FFF8F2;border-radius:8px;margin-bottom:6px;cursor:pointer;border-left:3px solid #E65100;">
-        <div style="font-size:12px;font-weight:600;color:#1B3A52;">${escapeHtml(p.naam)}</div>
-        <div style="font-size:11px;color:#888;">📍 ${escapeHtml(p.straat||p.plaats||'Geen adres')}</div>
-      </div>`;
-    });
-    html += `</div>`;
-  }
-
-  inhoud.innerHTML = html || '<p style="color:#888;font-size:13px;">Geen data</p>';
-}
-
-// ===== STATS ROW =====
-function tabletRenderStats() {
-  const projects = getProjects();
-  const counts = {
-    'all':                              projects.length,
-    'type-Toezicht omgevingsvergunning':projects.filter(p => p.typeZaak === 'Toezicht omgevingsvergunning').length,
-    'type-Melding handhaving':          projects.filter(p => p.typeZaak === 'Melding handhaving').length,
-    'type-Handhavingsverzoek':          projects.filter(p => p.typeZaak === 'Handhavingsverzoek').length,
-    'status-Nog niet gestart':          projects.filter(p => p.status  === 'Nog niet gestart').length,
-    'status-In uitvoering':             projects.filter(p => p.status  === 'In uitvoering').length,
-    'status-Gereed':                    projects.filter(p => p.status  === 'Gereed').length,
-    'status-In te trekken':             projects.filter(p => p.status  === 'In te trekken').length,
-  };
-  Object.entries(counts).forEach(([filter, count]) => {
-    const chip = document.querySelector(`#filterChips [data-filter="${filter}"]`);
-    if (!chip) return;
-    const badge = chip.querySelector('.fc-badge');
-    if (!badge) return;
-    if (count > 0) { badge.textContent = count; badge.style.display = ''; }
-    else           { badge.textContent = ''; badge.style.display = 'none'; }
-  });
-}
-
-// ===== KAART VIEW OVERRIDE =====
-const _origSetView = setView;
-setView = function(view) {
-  _origSetView(view);
-  const subheader  = document.querySelector('#screen-projectList .subheader');
-  const listCol    = document.getElementById('listCol');
-  const kc         = document.getElementById('kaartContainer');
-  const sortEl     = document.getElementById('sortSelect');
-  const vandaagBtn = document.getElementById('vandaagBtn');
-  if (view === 'kaart') {
-    // Keep subheader (title + filter chips) visible — map sits inside the content frame
-    if (subheader)  subheader.style.display  = '';
-    if (sortEl)     sortEl.style.display     = 'none';
-    if (vandaagBtn) vandaagBtn.style.display = 'none';
-    if (listCol) { listCol.style.marginRight = '0'; listCol.style.padding = '0'; listCol.style.overflow = 'hidden'; }
-    if (kc) kc.style.height = '100%';
-  } else {
-    if (subheader)  subheader.style.display  = '';
-    if (sortEl)     sortEl.style.display     = '';
-    if (vandaagBtn) vandaagBtn.style.display = '';
-    if (listCol) { listCol.style.padding = '12px 16px'; listCol.style.overflow = 'auto'; if (_vandaagOpen) listCol.style.marginRight = '260px'; }
-    if (kc) kc.style.height = '';
-  }
-  if (view === 'kaart') {
-    document.getElementById('nav-kaart').classList.add('active');
-    document.getElementById('nav-zaken').classList.remove('active');
-  } else {
-    document.getElementById('nav-zaken').classList.add('active');
-    document.getElementById('nav-kaart').classList.remove('active');
-  }
-};
-
-// ===== SEARCH from topbar =====
-function tabletSearch() {
-  const activeScreen = document.querySelector('.screen.active');
-  if (!activeScreen) return;
-  if (activeScreen.id === 'screen-projectList') renderProjectList();
-  else if (activeScreen.id === 'screen-projectDetail') tabletRenderSplitList();
-}
-
-// Override renderProjectList to refresh stats and vandaag
-const _origRenderProjectList = renderProjectList;
-renderProjectList = function() {
-  // Use the topbar search bar value
-  const searchBar = document.getElementById('searchBar');
-  // Temporarily alias so the original function reads it
-  _origRenderProjectList();
-  tabletRenderStats();
-};
-
-// Override setFilter to use tablet chips
-const _origSetFilter = setFilter;
-setFilter = function(el, filter) {
-  currentFilter = filter;
-  document.querySelectorAll('#filterChips .filter-chip-t').forEach(c => c.classList.remove('active'));
-  if (el) el.classList.add('active');
-  renderProjectList();
-  if (huidigView === 'kaart') renderKaart();
-};
-
-// Override goBack to use tablet navigation
-goBack = function() {
-  if (navigationStack.length > 0) {
-    const prev = navigationStack.pop();
-    showScreen(prev);
-    if (prev === 'projectList') renderProjectList();
-    if (prev === 'projectDetail') { renderProjectDetail(); tabletRenderSplitList(); }
-    if (prev === 'controleDetail') renderControleDetail();
-  } else {
-    showScreen('projectList');
-    renderProjectList();
-  }
-};
-
-// Override saveProject to go to split view after save
-const _origSaveProject = saveProject;
-saveProject = function() {
-  // capture old openProjectDetail inline call behaviour — handled via showScreen override
-  _origSaveProject();
-};
-
-// Init for tablet: load avatar initials from settings
-const _origInit = init;
-init = function() {
-  _origInit();
-  const s = getSettings();
-  const naam = s.toezichthouder || '';
-  const initials = naam.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2) || 'CK';
-  const av = document.getElementById('topbarAvatar');
-  if (av) av.textContent = initials;
-  const sub = document.getElementById('topbarSub');
-  if (sub && s.gemeentenaam) sub.textContent = s.gemeentenaam + ' · VTH Toezicht';
-  tabletRenderStats();
-  tabletRenderVandaag();
-  initBestandSync();
-  initRapportenMap();
 };
 
 document.addEventListener('DOMContentLoaded', init);
-
-// ===== VIEWPORT HEIGHT FIX — Android Edge/Chrome browser chrome =====
-// 100dvh is used in CSS; this JS fallback handles older browsers that don't support dvh.
-(function fixViewportHeight() {
-  function applyHeight() {
-    // Only apply JS fallback when dvh is not supported
-    if (!CSS.supports('height', '1dvh')) {
-      document.querySelector('.tablet-shell').style.height = window.innerHeight + 'px';
-    }
-  }
-  applyHeight();
-  window.addEventListener('resize', applyHeight);
-})();
-
-// ===== BESTAND SYNC — File System Access API =====
-
-// --- IndexedDB: opslaan/laden van FileSystemFileHandle ---
-function _openSyncDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('vth-sync', 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore('handles');
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function _opslaanHandle(handle) {
-  const db = await _openSyncDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readwrite');
-    tx.objectStore('handles').put(handle, 'syncBestand');
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-}
-async function _laadHandle() {
-  const db = await _openSyncDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readonly');
-    const req = tx.objectStore('handles').get('syncBestand');
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function _verwijderHandle() {
-  const db = await _openSyncDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readwrite');
-    tx.objectStore('handles').delete('syncBestand');
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// --- State ---
-let syncBestandHandle = null;
-let _syncDebounce = null;
-let _herverbindHandle = null;
-
-// --- Permission helper ---
-async function _checkSyncPermissie(handle, schrijven) {
-  const opts = { mode: schrijven ? 'readwrite' : 'read' };
-  if (await handle.queryPermission(opts) === 'granted') return true;
-  if (await handle.requestPermission(opts) === 'granted') return true;
-  return false;
-}
-
-// --- Verzamel alle app-data in één object ---
-function _getAlleSyncData() {
-  return {
-    version: 2,
-    datum: new Date().toISOString(),
-    projects:  getProjects(),
-    settings:  getSettings(),
-    fotos:     JSON.parse(storage.getItem('vth_fotos')     || '[]'),
-    logo:      storage.getItem('vth_logo')                 || '',
-    sjablonen: JSON.parse(storage.getItem('vth_sjablonen') || 'null')
-  };
-}
-
-// --- Laad data-object terug in storage ---
-function _laadSyncDataIn(data) {
-  if (!data || typeof data !== 'object') return;
-  if (data.projects  !== undefined) storage.setItem('vth_projects',  JSON.stringify(data.projects));
-  if (data.settings  !== undefined) storage.setItem('vth_settings',  JSON.stringify(data.settings));
-  if (data.fotos     !== undefined) storage.setItem('vth_fotos',     JSON.stringify(data.fotos));
-  if (data.logo      !== undefined) storage.setItem('vth_logo',      data.logo);
-  if (data.sjablonen !== undefined) storage.setItem('vth_sjablonen', JSON.stringify(data.sjablonen));
-}
-
-// --- Schrijf naar bestand ---
-async function _schrijfSyncBestand() {
-  if (!syncBestandHandle) return;
-  try {
-    const ok = await _checkSyncPermissie(syncBestandHandle, true);
-    if (!ok) { _setSyncStatus('fout'); return; }
-    const writable = await syncBestandHandle.createWritable();
-    await writable.write(JSON.stringify(_getAlleSyncData(), null, 2));
-    await writable.close();
-    _setSyncStatus('gekoppeld');
-  } catch(e) {
-    console.warn('Sync schrijffout:', e);
-    _setSyncStatus('fout');
-  }
-}
-
-// --- Lees van bestand ---
-async function leesVanSyncBestand() {
-  if (!syncBestandHandle) return false;
-  try {
-    const ok = await _checkSyncPermissie(syncBestandHandle, false);
-    if (!ok) { _setSyncStatus('fout'); return false; }
-    const file = await syncBestandHandle.getFile();
-    const data = JSON.parse(await file.text());
-    _laadSyncDataIn(data);
-    _setSyncStatus('gekoppeld');
-    return true;
-  } catch(e) {
-    console.warn('Sync leesfout:', e);
-    _setSyncStatus('fout');
-    return false;
-  }
-}
-
-// --- Debounced trigger na elke opslag ---
-function triggerSync() {
-  if (!syncBestandHandle) return;
-  clearTimeout(_syncDebounce);
-  _setSyncStatus('bezig');
-  _syncDebounce = setTimeout(_schrijfSyncBestand, 900);
-}
-
-// --- Status badge bijwerken ---
-function _setSyncStatus(status) {
-  const badge = document.getElementById('syncStatusBadge');
-  if (!badge) return;
-  const cfg = {
-    geen:     { icon: '',   bg: 'transparent',  display: 'none'  },
-    gekoppeld:{ icon: '🔗', bg: '#2E7D32',       display: 'flex'  },
-    bezig:    { icon: '💾', bg: '#E65100',       display: 'flex'  },
-    fout:     { icon: '⚠️', bg: '#C62828',       display: 'flex'  }
-  };
-  const s = cfg[status] || cfg.geen;
-  badge.textContent = s.icon;
-  badge.style.background = s.bg;
-  badge.style.display = s.display;
-  badge.title = {
-    geen: 'Geen sync-bestand gekoppeld',
-    gekoppeld: 'Gesynchroniseerd — ' + (syncBestandHandle ? syncBestandHandle.name : ''),
-    bezig: 'Bezig met opslaan naar bestand...',
-    fout: 'Synchronisatiefout — controleer bestandstoegang in Instellingen'
-  }[status] || '';
-}
-
-// --- Settings UI bijwerken ---
-function updateSyncInstellingen() {
-  const el = document.getElementById('syncInstellingen');
-  if (!el) return;
-  const ondersteund = !!window.showOpenFilePicker;
-  if (!ondersteund) {
-    el.innerHTML = `<div style="padding:10px 12px; background:#FFF3E0; border-radius:8px; border:1px solid #FFCC80; font-size:13px; color:#E65100;">
-      ⚠️ Uw browser ondersteunt de File System API niet. Gebruik <strong>Microsoft Edge</strong> of <strong>Google Chrome</strong>.
-    </div>`;
-    return;
-  }
-  if (syncBestandHandle) {
-    el.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:#E8F5E9; border-radius:8px; border:1px solid #A5D6A7; margin-bottom:12px;">
-        <span style="font-size:20px;">🔗</span>
-        <div>
-          <div style="font-size:13px; font-weight:700; color:#2E7D32;">Gekoppeld</div>
-          <div style="font-size:12px; color:#555;">${escapeHtml(syncBestandHandle.name)}</div>
-        </div>
-      </div>
-      <button class="btn btn-secondary btn-block" onclick="herlaadVanSyncBestand()" style="margin-bottom:8px; font-size:13px;">↻ Data nu opnieuw inlezen</button>
-      <button class="btn btn-danger btn-block" onclick="ontkoppelSyncBestand()" style="font-size:13px;">Ontkoppelen</button>`;
-  } else {
-    el.innerHTML = `
-      <div style="padding:10px 12px; background:#F5F5F5; border-radius:8px; border:1px solid #E0E0E0; margin-bottom:12px; font-size:13px; color:#616161;">
-        Geen bestand gekoppeld — data wordt alleen lokaal opgeslagen.
-      </div>
-      <button class="btn btn-primary btn-block" onclick="koppelBestaandSyncBestand()" style="margin-bottom:8px;">🔗 Koppel bestaand bestand</button>
-      <button class="btn btn-secondary btn-block" onclick="maakNieuwSyncBestand()">＋ Nieuw sync-bestand aanmaken</button>`;
-  }
-}
-
-// --- Herverbind-banner (na browserherstart) ---
-function _toonHerverbindBanner(handle) {
-  const banner = document.getElementById('syncHerverbindBanner');
-  if (!banner) return;
-  _herverbindHandle = handle;
-  banner.style.display = '';
-  banner.innerHTML = `<div style="background:#E3F2FD; border:1px solid #90CAF9; border-radius:8px; padding:10px 16px; margin:0 0 8px; display:flex; align-items:center; gap:12px;">
-    <span style="font-size:20px;">🔗</span>
-    <div style="flex:1; font-size:13px; color:#1565C0;">
-      <strong>Sync-bestand beschikbaar:</strong> ${escapeHtml(handle.name)}<br>
-      <span style="font-size:12px;">Klik om te verbinden en de laatste data te laden.</span>
-    </div>
-    <button class="btn btn-primary" onclick="herverbindSyncBestand()" style="font-size:12px; padding:7px 14px; white-space:nowrap;">Verbinden</button>
-    <button onclick="document.getElementById('syncHerverbindBanner').style.display='none'" style="background:none; border:none; font-size:18px; cursor:pointer; color:#888; padding:0 0 0 4px;">✕</button>
-  </div>`;
-}
-
-// --- Acties ---
-async function koppelBestaandSyncBestand() {
-  if (!window.showOpenFilePicker) return;
-  try {
-    const [handle] = await window.showOpenFilePicker({
-      types: [{ description: 'OmgevingsCheck data', accept: { 'application/json': ['.json'] } }],
-      multiple: false
-    });
-    syncBestandHandle = handle;
-    await _opslaanHandle(handle);
-    const ok = await leesVanSyncBestand();
-    if (ok) { renderProjectList(); loadSettings(); showToast('Bestand gekoppeld en data geladen ✓'); }
-    updateSyncInstellingen();
-  } catch(e) { if (e.name !== 'AbortError') showToast('Fout: ' + e.message); }
-}
-
-async function maakNieuwSyncBestand() {
-  if (!window.showSaveFilePicker) return;
-  try {
-    const handle = await window.showSaveFilePicker({
-      suggestedName: 'omgevingscheck-data.json',
-      types: [{ description: 'OmgevingsCheck data', accept: { 'application/json': ['.json'] } }]
-    });
-    syncBestandHandle = handle;
-    await _opslaanHandle(handle);
-    await _schrijfSyncBestand();
-    showToast('Sync-bestand aangemaakt en gekoppeld ✓');
-    updateSyncInstellingen();
-  } catch(e) { if (e.name !== 'AbortError') showToast('Fout: ' + e.message); }
-}
-
-async function herverbindSyncBestand() {
-  if (!_herverbindHandle) return;
-  try {
-    const ok = await _checkSyncPermissie(_herverbindHandle, true);
-    if (ok) {
-      syncBestandHandle = _herverbindHandle;
-      _herverbindHandle = null;
-      const geladen = await leesVanSyncBestand();
-      if (geladen) { renderProjectList(); loadSettings(); showToast('Verbonden en data ingeladen ✓'); }
-      const banner = document.getElementById('syncHerverbindBanner');
-      if (banner) banner.style.display = 'none';
-      updateSyncInstellingen();
-    } else {
-      showToast('Toegang geweigerd door browser');
-    }
-  } catch(e) { showToast('Fout bij verbinden: ' + e.message); }
-}
-
-async function herlaadVanSyncBestand() {
-  const ok = await leesVanSyncBestand();
-  if (ok) { renderProjectList(); loadSettings(); showToast('Data herladen van bestand ✓'); }
-  else showToast('Kan bestand niet lezen — controleer toegang');
-}
-
-async function ontkoppelSyncBestand() {
-  if (!confirm('Ontkoppelen? Data blijft bewaard in de browser, maar wordt niet meer gesynchroniseerd.')) return;
-  syncBestandHandle = null;
-  await _verwijderHandle();
-  _setSyncStatus('geen');
-  updateSyncInstellingen();
-  showToast('Sync-bestand ontkoppeld');
-}
-
-// --- Startup ---
-async function initBestandSync() {
-  try {
-    const handle = await _laadHandle();
-    if (!handle) { updateSyncInstellingen(); return; }
-    // Controleer of permissie al geldig is (zelfde browser-sessie)
-    const staat = await handle.queryPermission({ mode: 'readwrite' });
-    if (staat === 'granted') {
-      syncBestandHandle = handle;
-      const ok = await leesVanSyncBestand();
-      if (ok) { renderProjectList(); loadSettings(); }
-    } else {
-      // Toon banner voor herverbinding (vereist gebruikersgebaar)
-      _toonHerverbindBanner(handle);
-    }
-    updateSyncInstellingen();
-  } catch(e) {
-    console.warn('initBestandSync:', e);
-    updateSyncInstellingen();
-  }
-}
-
-// --- Override save-functies om sync te triggeren ---
-const _origSaveProjectsSync = saveProjects;
-saveProjects = function(projects) {
-  _origSaveProjectsSync(projects);
-  triggerSync();
-};
-const _origSaveSettingsDataSync = saveSettingsData;
-saveSettingsData = function(settings) {
-  _origSaveSettingsDataSync(settings);
-  triggerSync();
-};
-const _origSaveSjablonenSync = saveSjablonen;
-saveSjablonen = function(sjablonen) {
-  _origSaveSjablonenSync(sjablonen);
-  triggerSync();
-};
-const _origSaveFotoSync = saveFoto;
-saveFoto = function(foto) {
-  _origSaveFotoSync(foto);
-  triggerSync();
-};
-const _origDeleteFotoSync = deleteFoto;
-deleteFoto = function(fotoId) {
-  _origDeleteFotoSync(fotoId);
-  triggerSync();
-};
-
-// ===== RAPPORTENMAP — automatisch HTML + PDF opslaan per zaak =====
-
-let rapportenMapHandle = null;
-
-// --- IndexedDB helpers (hergebruikt van sync-module) ---
-async function _laadRapportenMapHandle() {
-  const db = await _openSyncDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readonly');
-    const req = tx.objectStore('handles').get('rapportenMap');
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function _opslaanRapportenMapHandle(handle) {
-  const db = await _openSyncDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readwrite');
-    tx.objectStore('handles').put(handle, 'rapportenMap');
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-}
-async function _verwijderRapportenMapHandle() {
-  const db = await _openSyncDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readwrite');
-    tx.objectStore('handles').delete('rapportenMap');
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// --- Helpers voor mapnamen ---
-function _saniteerNaam(naam) {
-  return (naam || 'Onbekend')
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '-')
-    .replace(/-{2,}/g, '-')
-    .trim()
-    .substring(0, 200);
-}
-function _zaakMapNaam(p) {
-  const delen = [];
-  if (p.zaaknummer) delen.push(p.zaaknummer);
-  if (p.naam)       delen.push(p.naam);
-  return _saniteerNaam(delen.join(' \u2014 ') || 'Onbekende zaak');
-}
-function _controleBestandsnaam(c) {
-  return _saniteerNaam([c.soort, c.datum].filter(Boolean).join(' ') || 'Controle');
-}
-
-// --- Bouw volledig standalone HTML-document ---
-function _bouwStandaloneHtml(project, controle) {
-  const gemeente = getSettings().gemeentenaam || 'Gemeente';
-  const titel = escapeHtml(
-    [project.zaaknummer || project.naam, controle.soort, controle.datum]
-      .filter(Boolean).join(' \u2014 ')
-  );
-  // Gebruik de inhoud van printArea (al opgebouwd door buildPrintArea)
-  const inhoud = document.getElementById('printArea').innerHTML || '';
-  return `<!DOCTYPE html>
-<html lang="nl">
-<head>
-<meta charset="UTF-8">
-<title>${titel}</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-         font-size: 11pt; color: #212121; line-height: 1.5; margin: 18mm; background:#fff; }
-  h1   { font-size: 18pt; color: #1B6B6B; margin: 0 0 4px; }
-  h2   { font-size: 14pt; color: #424242; font-weight: 400; margin: 0; }
-  h3   { font-size: 12pt; color: #1B6B6B; border-bottom: 1px solid #E0E0E0;
-         padding-bottom: 4px; margin: 20px 0 10px; }
-  h4   { font-size: 11pt; margin: 0 0 4px; }
-  img  { max-width: 100%; }
-  .print-header { display: flex; justify-content: space-between; align-items: flex-start;
-                  border-bottom: 3px solid #1B6B6B; padding-bottom: 12px; margin-bottom: 16px; }
-  .print-date   { font-size: 10pt; color: #757575; margin-top: 6px; }
-  .print-result-banner { text-align: center; padding: 12px; font-size: 16pt; font-weight: 700;
-                         border-radius: 8px; margin: 16px 0; }
-  .print-result-banner.akkoord      { background: #E8F5E9; color: #2E7D32; border: 2px solid #2E7D32; }
-  .print-result-banner.akkoord-mits { background: #FFF8E1; color: #F57F17; border: 2px solid #F57F17; }
-  .print-result-banner.niet-akkoord { background: #FFEBEE; color: #C62828; border: 2px solid #C62828; }
-  .print-result-banner.geen         { background: #F5F5F5; color: #757575; border: 2px solid #BDBDBD; }
-  .print-table  { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-  .print-table th, .print-table td { border: 1px solid #E0E0E0; padding: 6px 10px;
-                                     font-size: 10pt; text-align: left; }
-  .print-table th { background: #F5F5F5; font-weight: 600; width: 35%; }
-  .print-section { margin-bottom: 20px; }
-  .print-onderwerp { border: 1px solid #E0E0E0; border-radius: 6px; padding: 12px;
-                     margin-bottom: 10px; page-break-inside: avoid; }
-  .print-onderwerp.akkoord      { border-left: 5px solid #2E7D32; }
-  .print-onderwerp.akkoord-mits { border-left: 5px solid #F57F17; }
-  .print-onderwerp.niet-akkoord { border-left: 5px solid #C62828; }
-  .result-label                 { display: inline-block; padding: 2px 8px; border-radius: 4px;
-                                  font-size: 9pt; font-weight: 700; color: #fff; margin-bottom: 6px; }
-  .result-label.akkoord         { background: #2E7D32; }
-  .result-label.akkoord-mits    { background: #F57F17; }
-  .result-label.niet-akkoord    { background: #C62828; }
-  .print-footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #E0E0E0;
-                  font-size: 9pt; color: #757575; text-align: center; }
-</style>
-</head>
-<body>${inhoud}</body>
-</html>`;
-}
-
-// --- Daadwerkelijk opslaan ---
-async function _slaRapportOp(project, controle) {
-  if (!rapportenMapHandle) return;
-  try {
-    // Permissie controleren / opvragen
-    const staat = await rapportenMapHandle.queryPermission({ mode: 'readwrite' });
-    if (staat !== 'granted') {
-      const nieuw = await rapportenMapHandle.requestPermission({ mode: 'readwrite' });
-      if (nieuw !== 'granted') { showToast('Geen toegang tot rapportenmap'); return; }
-    }
-
-    const zaakMap    = await rapportenMapHandle.getDirectoryHandle(_zaakMapNaam(project), { create: true });
-    const basisNaam  = _controleBestandsnaam(controle);
-    const htmlDoc    = _bouwStandaloneHtml(project, controle);
-
-    // HTML opslaan
-    const htmlH = await zaakMap.getFileHandle(basisNaam + '.html', { create: true });
-    const htmlW = await htmlH.createWritable();
-    await htmlW.write(htmlDoc);
-    await htmlW.close();
-
-    // PDF opslaan via html2pdf.js
-    if (window.html2pdf) {
-      // Clone printArea zodat CSS-klassen correct worden meegenomen
-      const bron = document.getElementById('printArea');
-      const kloon = bron.cloneNode(true);
-      kloon.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:#fff;display:block;';
-      document.body.appendChild(kloon);
-
-      try {
-        const blob = await html2pdf()
-          .set({
-            margin:     [12, 12, 12, 12],
-            filename:   basisNaam + '.pdf',
-            image:      { type: 'jpeg', quality: 0.92 },
-            html2canvas:{ scale: 2, useCORS: true, logging: false },
-            jsPDF:      { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          })
-          .from(kloon)
-          .outputPdf('blob');
-
-        document.body.removeChild(kloon);
-
-        const pdfH = await zaakMap.getFileHandle(basisNaam + '.pdf', { create: true });
-        const pdfW = await pdfH.createWritable();
-        await pdfW.write(blob);
-        await pdfW.close();
-
-        showToast('HTML + PDF opgeslagen in OneDrive \u2713');
-      } catch (pdfFout) {
-        if (document.body.contains(kloon)) document.body.removeChild(kloon);
-        console.warn('PDF genereren mislukt:', pdfFout);
-        showToast('HTML opgeslagen \u2713  (PDF overgeslagen — herlaad pagina voor PDF)');
-      }
-    } else {
-      showToast('HTML opgeslagen in OneDrive \u2713  (laad pagina opnieuw voor PDF-ondersteuning)');
-    }
-  } catch (e) {
-    console.warn('Rapport opslaan mislukt:', e);
-    showToast('Fout bij opslaan rapport: ' + e.message);
-  }
-}
-
-// --- Override generateReport ---
-const _origGenerateReport = generateReport;
-generateReport = function() {
-  _origGenerateReport();
-  if (rapportenMapHandle) {
-    const p = getProjects().find(x => x.id === currentProjectId);
-    const c = p ? (p.controles || []).find(x => x.id === currentControleId) : null;
-    if (p && c) _slaRapportOp(p, c);
-  }
-};
-
-// --- Settings UI ---
-function updateRapportenMapInstellingen() {
-  const el = document.getElementById('rapportenMapInstellingen');
-  if (!el) return;
-  if (!window.showDirectoryPicker) {
-    el.innerHTML = `<div style="padding:10px 12px; background:#FFF3E0; border-radius:8px;
-      border:1px solid #FFCC80; font-size:13px; color:#E65100;">
-      \u26a0\ufe0f Gebruik Microsoft Edge of Google Chrome voor deze functie.</div>`;
-    return;
-  }
-  if (rapportenMapHandle) {
-    el.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px;
-                  background:#E8F5E9; border-radius:8px; border:1px solid #A5D6A7; margin-bottom:12px;">
-        <span style="font-size:20px;">&#128193;</span>
-        <div>
-          <div style="font-size:13px; font-weight:700; color:#2E7D32;">Gekoppeld</div>
-          <div style="font-size:12px; color:#555;">${escapeHtml(rapportenMapHandle.name)}</div>
-        </div>
-      </div>
-      <button class="btn btn-danger btn-block" onclick="ontkoppelRapportenMap()" style="font-size:13px;">Ontkoppelen</button>`;
-  } else {
-    el.innerHTML = `
-      <div style="padding:10px 12px; background:#F5F5F5; border-radius:8px;
-                  border:1px solid #E0E0E0; margin-bottom:12px; font-size:13px; color:#616161;">
-        Geen map gekoppeld &mdash; rapporten worden niet automatisch opgeslagen.
-      </div>
-      <button class="btn btn-primary btn-block" onclick="kiesRapportenMap()">&#128193; Map kiezen op OneDrive</button>`;
-  }
-}
-
-async function kiesRapportenMap() {
-  if (!window.showDirectoryPicker) return;
-  try {
-    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    rapportenMapHandle = handle;
-    await _opslaanRapportenMapHandle(handle);
-    updateRapportenMapInstellingen();
-    showToast('Rapportenmap gekoppeld \u2713');
-  } catch(e) { if (e.name !== 'AbortError') showToast('Fout: ' + e.message); }
-}
-
-async function ontkoppelRapportenMap() {
-  if (!confirm('Rapportenmap ontkoppelen? Bestaande bestanden blijven onaangeroerd.')) return;
-  rapportenMapHandle = null;
-  await _verwijderRapportenMapHandle();
-  updateRapportenMapInstellingen();
-  showToast('Rapportenmap ontkoppeld');
-}
-
-// --- Startup ---
-async function initRapportenMap() {
-  try {
-    const handle = await _laadRapportenMapHandle();
-    if (!handle) { updateRapportenMapInstellingen(); return; }
-    const staat = await handle.queryPermission({ mode: 'readwrite' });
-    if (staat === 'granted') rapportenMapHandle = handle;
-    // Anders: permissie wordt gevraagd bij de eerste rapportgeneratie
-    updateRapportenMapInstellingen();
-  } catch(e) { updateRapportenMapInstellingen(); }
-}
-
-// ===== IN-TAB CONTROLE NAVIGATIE =====
-
-function showControleSubView(view) {
-  document.getElementById('cv-list').style.display   = view === 'list'   ? '' : 'none';
-  document.getElementById('cv-form').style.display   = view === 'form'   ? '' : 'none';
-  document.getElementById('cv-detail').style.display = view === 'detail' ? '' : 'none';
-}
-
-// Wanneer naar controles-tab geswitcht wordt, standaard lijst tonen
-const _origSwitchTabForControles = switchTab;
-switchTab = function(tab, el) {
-  _origSwitchTabForControles(tab, el);
-  if (tab === 'controles') {
-    showControleSubView('list');
-  }
-};
-
-// Onderschep showScreen voor controleForm en controleDetail
-// zodat navigatie binnen de project detail-tab blijft
-const _origShowScreenControle = showScreen;
-showScreen = function(screenId) {
-  if (screenId === 'controleForm') {
-    _origShowScreenControle('projectDetail');
-    const tabBtn = document.querySelectorAll('#screen-projectDetail .tab-btn')[1];
-    if (tabBtn) switchTab('controles', tabBtn);
-    showControleSubView('form');
-  } else if (screenId === 'controleDetail') {
-    _origShowScreenControle('projectDetail');
-    const tabBtn = document.querySelectorAll('#screen-projectDetail .tab-btn')[1];
-    if (tabBtn) switchTab('controles', tabBtn);
-    showControleSubView('detail');
-  } else {
-    _origShowScreenControle(screenId);
-  }
-};
-
-// Override deleteControle: na verwijderen terug naar controle-lijst in de tab
-deleteControle = function(id) {
-  if (!confirm('Weet u zeker dat u deze controle wilt verwijderen?')) return;
-  const projects = getProjects();
-  const pIdx = projects.findIndex(x => x.id === currentProjectId);
-  if (pIdx !== -1) {
-    projects[pIdx].controles = (projects[pIdx].controles || []).filter(c => c.id !== id);
-    saveProjects(projects);
-  }
-  showToast('Controle verwijderd');
-  _origShowScreenControle('projectDetail');
-  const tabBtn = document.querySelectorAll('#screen-projectDetail .tab-btn')[1];
-  if (tabBtn) _origSwitchTabForControles('controles', tabBtn);
-  showControleSubView('list');
-  renderControleList();
-};
 </script>
 </body>
 </html>
